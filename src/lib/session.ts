@@ -1,0 +1,1 @@
+export { getSessionUser, getActiveRole, isStaff, isStudent } from "@/lib/role";

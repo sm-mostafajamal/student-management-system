@@ -1,0 +1,531 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  STAFF
+  STUDENT
+}
+
+enum ProgrammeLevel {
+  CERTIFICATE
+  DIPLOMA
+  UNDERGRADUATE
+  POSTGRADUATE
+  DOCTORATE
+}
+
+enum StudentStatus {
+  ACTIVE
+  DEFERRED
+  SUSPENDED
+  WITHDRAWN
+  GRADUATED
+  EXPELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum Semester {
+  FIRST_SEMESTER
+  SECOND_SEMESTER
+  SUMMER_SEMESTER
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+  FAILED
+}
+
+enum FeeCategory {
+  TUITION
+  LIBRARY
+  EXAMINATION
+  HOSTEL
+  MEDICAL
+  REGISTRATION
+  FINE
+  OTHER
+}
+
+enum FeeStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  WAIVED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  MOBILE_MONEY
+  CHEQUE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum AssessmentType {
+  QUIZ
+  ASSIGNMENT
+  MIDTERM
+  FINAL_EXAM
+  PROJECT
+  PRACTICAL
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  LATE
+  RESUBMITTED
+}
+
+enum LetterGrade {
+  A_PLUS
+  A
+  A_MINUS
+  B_PLUS
+  B
+  B_MINUS
+  C_PLUS
+  C
+  C_MINUS
+  D_PLUS
+  D
+  F
+  INCOMPLETE
+  WITHDRAWN
+}
+
+// ─────────────────────────────────────────────
+// IDENTITY
+// ─────────────────────────────────────────────
+
+/// Login/identity record. Both staff and students are Users; Student holds
+/// the domain-specific profile data. Role is a simple toggle per assessment
+/// constraints — NOT enforced at the DB level for relations like
+/// CourseOffering.instructor (see README edge case #15).
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  firstName String
+  lastName  String
+  role      Role
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  studentProfile     Student?
+  instructedOfferings CourseOffering[]  @relation("Instructor")
+  recordedPayments    Payment[]         @relation("RecordedBy")
+  reversedPayments    Payment[]         @relation("ReversedBy")
+  gradedSubmissions   Submission[]      @relation("GradedBy")
+  computedGrades      Grade[]           @relation("ComputedBy")
+  gradeChanges        GradeChangeLog[]  @relation("ChangedBy")
+
+  @@index([role])
+  @@index([lastName, firstName])
+  @@index([deletedAt])
+}
+
+// ─────────────────────────────────────────────
+// ACADEMIC CALENDAR
+// ─────────────────────────────────────────────
+
+/// A real entity instead of a free-text "2025/2026" string scattered across
+/// tables. Enables clean rollover: only one row should have isCurrent=true
+/// (enforce via a partial unique index added in a raw SQL migration —
+/// Prisma's schema DSL doesn't support partial unique constraints natively).
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. "2025/2026"
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courseOfferings CourseOffering[]
+  feeStructures   FeeStructure[]
+  fees            Fee[]
+
+  @@index([isCurrent])
+}
+
+// ─────────────────────────────────────────────
+// PROGRAMME / COURSE CATALOG
+// ─────────────────────────────────────────────
+
+model Programme {
+  id             String         @id @default(cuid())
+  code           String         @unique // e.g. "BSC-CS"
+  name           String
+  level          ProgrammeLevel
+  durationYears  Int
+  departmentName String?
+  isActive       Boolean        @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  students      Student[]
+  courses       Course[]
+  feeStructures FeeStructure[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+/// The permanent catalog entry. Does NOT contain term-specific data
+/// (instructor, dueDates, capacity) — that lives on CourseOffering.
+model Course {
+  id            String    @id @default(cuid())
+  code          String    @unique // e.g. "CS201"
+  title         String
+  creditHours   Int
+  programmeId   String? // nullable: general-education / cross-programme courses
+  isActive      Boolean   @default(true)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  programme Programme? @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  offerings CourseOffering[]
+
+  @@index([programmeId])
+  @@index([deletedAt])
+}
+
+/// One instance of a Course in a specific term. Assessments and Enrollments
+/// attach here, not to Course directly — this is what makes "same course,
+/// different year" not duplicate data.
+model CourseOffering {
+  id             String   @id @default(cuid())
+  courseId       String
+  academicYearId String
+  semester       Semester
+  instructorId   String?
+  capacity       Int?
+  deletedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  instructor   User?        @relation("Instructor", fields: [instructorId], references: [id], onDelete: SetNull)
+
+  enrollments Enrollment[]
+  assessments Assessment[]
+  grades      Grade[]
+
+  // One section per course per term — a deliberate simplification.
+  // Multiple sections/streams would need a `section` field added here.
+  @@unique([courseId, academicYearId, semester])
+  @@index([academicYearId, semester])
+  @@index([instructorId])
+}
+
+// ─────────────────────────────────────────────
+// STUDENT
+// ─────────────────────────────────────────────
+
+model Student {
+  id                     String        @id @default(cuid())
+  userId                 String        @unique
+  studentNumber          String        @unique // e.g. "PEN/2025/00042"
+  programmeId            String
+  admissionAcademicYearId String?      // intake cohort, nullable for legacy/manual entries
+  status                 StudentStatus @default(ACTIVE)
+  dateOfBirth            DateTime?
+  gender                 Gender?
+  phone                  String?
+  address                String?
+  expectedGraduationDate DateTime?
+  deletedAt              DateTime?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+
+  enrollments Enrollment[]
+  fees        Fee[]
+  payments    Payment[]
+  submissions Submission[]
+  grades      Grade[]
+
+  @@index([programmeId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+// ─────────────────────────────────────────────
+// ENROLLMENT (Student ↔ CourseOffering)
+// ─────────────────────────────────────────────
+
+model Enrollment {
+  id               String           @id @default(cuid())
+  studentId        String
+  courseOfferingId String
+  status           EnrollmentStatus @default(ENROLLED)
+  enrolledAt       DateTime         @default(now())
+  droppedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  student        Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, courseOfferingId])
+  @@index([courseOfferingId, status])
+  @@index([studentId, status])
+}
+
+// ─────────────────────────────────────────────
+// FEES & PAYMENTS
+// ─────────────────────────────────────────────
+
+/// The TEMPLATE — what a programme costs, per year/semester/category.
+/// Changing a row here must NEVER retroactively change an already-issued
+/// Fee (see Fee.amountDue below).
+model FeeStructure {
+  id             String      @id @default(cuid())
+  programmeId    String
+  academicYearId String
+  semester       Semester
+  category       FeeCategory
+  amount         Decimal     @db.Decimal(10, 2)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  programme    Programme    @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  fees         Fee[]
+
+  @@unique([programmeId, academicYearId, semester, category])
+}
+
+/// The actual invoice line billed to ONE student. amountDue is a SNAPSHOT
+/// taken at creation time — it does not follow FeeStructure if the
+/// structure changes later. This is the direct fix for "programme fee
+/// change after enrolment."
+///
+/// amountPaid is deliberately NOT stored here (see README edge case #2) —
+/// balance is always computed as: amountDue - waivedAmount - SUM(payments).
+/// `status` is a cached filter field only, maintained by the service layer,
+/// never the source of truth for exact balance.
+model Fee {
+  id             String     @id @default(cuid())
+  studentId      String
+  feeStructureId String?    // nullable: ad-hoc fees/fines not from a template
+  academicYearId String
+  semester       Semester
+  category       FeeCategory
+  amountDue      Decimal    @db.Decimal(10, 2)
+  waivedAmount   Decimal    @default(0) @db.Decimal(10, 2)
+  waivedReason   String?
+  status         FeeStatus  @default(PENDING)
+  dueDate        DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  feeStructure FeeStructure? @relation(fields: [feeStructureId], references: [id], onDelete: SetNull)
+  academicYear AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+  payments     Payment[]
+
+  @@unique([studentId, feeStructureId]) 
+  @@index([studentId, academicYearId])
+  @@index([studentId, status])
+  @@index([dueDate])
+}
+
+/// Financial records are NEVER deleted. Reversal (bounced cheque, error)
+/// happens via status = REVERSED, with a full audit trail — never a DELETE.
+model Payment {
+  id             String        @id @default(cuid())
+  feeId          String
+  studentId      String        // denormalized: fast "all payments by student" without joining through Fee
+  reference      String        @unique // idempotency key — blocks duplicate/double-submitted payments
+  amount         Decimal       @db.Decimal(10, 2)
+  method         PaymentMethod
+  status         PaymentStatus @default(COMPLETED)
+  paidAt         DateTime      // when the payment actually occurred (may be backdated for bank deposits)
+  recordedById   String
+  reversedById   String?
+  reversedAt     DateTime?
+  reversalReason String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  fee        Fee     @relation(fields: [feeId], references: [id], onDelete: Restrict)
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  recordedBy User    @relation("RecordedBy", fields: [recordedById], references: [id], onDelete: Restrict)
+  reversedBy User?   @relation("ReversedBy", fields: [reversedById], references: [id], onDelete: SetNull)
+
+  @@index([studentId, status])
+  @@index([feeId])
+}
+
+// ─────────────────────────────────────────────
+// ASSESSMENTS, SUBMISSIONS, GRADES
+// ─────────────────────────────────────────────
+
+model Assessment {
+  id                 String         @id @default(cuid())
+  courseOfferingId   String
+  title              String
+  type               AssessmentType
+  weightPercentage   Decimal        @db.Decimal(5, 2) // contribution to final grade
+  maxScore           Decimal        @db.Decimal(6, 2)
+  dueDate            DateTime
+  gracePeriodMinutes Int            @default(0)
+  maxAttempts        Int            @default(1)
+  isPublished        Boolean        @default(false) // controls student visibility of scores
+  publishedAt        DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Restrict)
+  submissions    Submission[]
+
+  @@index([courseOfferingId, dueDate])
+}
+
+/// isLate is computed ONCE at submission time and stored immutably — never
+/// recalculated later, so changing an assessment's dueDate afterward can't
+/// retroactively relabel a submission as late/on-time.
+model Submission {
+  id               String           @id @default(cuid())
+  assessmentId     String
+  studentId        String
+  attemptNumber    Int              @default(1)
+  isCurrent        Boolean          @default(true)
+  submittedAt      DateTime         @default(now())
+  isLate           Boolean
+  status           SubmissionStatus @default(SUBMITTED)
+  fileUrl          String? // internal storage KEY, not a public URL — resolved
+                            // by /api/submissions/[id]/file after an auth check
+  originalFileName String?
+  mimeType         String?
+  fileSizeBytes    Int?
+  content          String?
+  score            Decimal?         @db.Decimal(6, 2)
+  feedback         String?
+  gradedById       String?
+  gradedAt         DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  gradedBy   User?      @relation("GradedBy", fields: [gradedById], references: [id], onDelete: SetNull)
+
+  @@unique([assessmentId, studentId, attemptNumber]) // last-line-of-defense
+                                                       // against a duplicate
+                                                       // concurrent insert
+  @@index([assessmentId, isLate])
+  @@index([assessmentId, isCurrent])
+  @@index([studentId, isCurrent])
+}
+
+/// The FINAL course grade — distinct from individual Assessment scores.
+/// isPublished gates student visibility; any edit after publish must be
+/// paired with a GradeChangeLog entry by the service layer.
+/// The FINAL course result — one row per (student, courseOffering).
+///
+/// `version` is an optimistic-concurrency counter: every mutation (score
+/// edit, publish, unpublish) does a conditional update
+/// `WHERE id = ? AND version = ?` and bumps it. Two staff editing the same
+/// result concurrently means the second writer's expected version is stale
+/// — they get a CONFLICT and must reload, rather than silently
+/// overwriting the first writer's change (last-write-wins data loss).
+///
+/// isPublished gates student visibility. Editing the score of an
+/// ALREADY-published Grade automatically flips isPublished back to false
+/// (see result.service.ts) — a correction is never visible to the student
+/// until staff explicitly re-publish it. Every score change and every
+/// publish/unpublish transition produces one GradeChangeLog row.
+model Grade {
+  id               String       @id @default(cuid())
+  studentId        String
+  courseOfferingId String
+  numericScore     Decimal?     @db.Decimal(5, 2)
+  letterGrade      LetterGrade?
+  gpaPoints        Decimal?     @db.Decimal(3, 2)
+  isPublished      Boolean      @default(false)
+  publishedAt      DateTime?
+  computedById     String?
+  version          Int          @default(1)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  student        Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  courseOffering CourseOffering   @relation(fields: [courseOfferingId], references: [id], onDelete: Restrict)
+  computedBy     User?            @relation("ComputedBy", fields: [computedById], references: [id], onDelete: SetNull)
+  changeLogs     GradeChangeLog[]
+
+  @@unique([studentId, courseOfferingId])
+  @@index([courseOfferingId, isPublished])
+  @@index([studentId, isPublished])
+}
+
+/// Audit trail required specifically for "grade changed after publish."
+/// Every post-publish mutation to Grade should produce one row here.
+/// Audit trail for BOTH kinds of sensitive mutation on a Grade:
+/// (1) a score changing, and (2) a publish/unpublish transition.
+/// previousIsPublished/newIsPublished are always both recorded — even for
+/// a pure score correction — so "was this visible to the student at the
+/// time of the change" is answerable from the log alone, without cross-
+/// referencing timestamps against Grade.publishedAt.
+model GradeChangeLog {
+  id                   String       @id @default(cuid())
+  gradeId              String
+  previousNumericScore Decimal?     @db.Decimal(5, 2)
+  previousLetterGrade  LetterGrade?
+  previousGpaPoints    Decimal?     @db.Decimal(3, 2)
+  newNumericScore      Decimal?     @db.Decimal(5, 2)
+  newLetterGrade       LetterGrade?
+  newGpaPoints         Decimal?     @db.Decimal(3, 2)
+  previousIsPublished  Boolean
+  newIsPublished       Boolean
+  reason               String
+  changedById          String
+  changedAt            DateTime     @default(now())
+
+  grade     Grade @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  changedBy User  @relation("ChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([gradeId, changedAt])
+}
