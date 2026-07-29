@@ -62,9 +62,9 @@ export async function seedFeesAndPayments(prisma: PrismaClient) {
     });
   }
 
-  // 2. Bill every active student, then vary demo data so the overdue list
+  // 2. Bill every ENROLLED student, then vary demo data so the overdue list
   // and balance UI have something realistic to show.
-  const students = await prisma.student.findMany({ where: { deletedAt: null, status: "ACTIVE" } });
+  const students = await prisma.student.findMany({ where: { deletedAt: null, status: "ENROLLED" } });
 
   for (const [index, student] of students.entries()) {
     const structures = await prisma.feeStructure.findMany({

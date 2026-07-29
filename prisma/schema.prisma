@@ -30,11 +30,11 @@ enum ProgrammeLevel {
 }
 
 enum StudentStatus {
-  ACTIVE
+  ENROLLED    
   DEFERRED
   SUSPENDED
   WITHDRAWN
-  GRADUATED
+  COMPLETED   
   EXPELLED
 }
 
@@ -264,7 +264,7 @@ model Student {
   studentNumber          String        @unique // e.g. "PEN/2025/00042"
   programmeId            String
   admissionAcademicYearId String?      // intake cohort, nullable for legacy/manual entries
-  status                 StudentStatus @default(ACTIVE)
+  status                 StudentStatus @default(ENROLLED)
   dateOfBirth            DateTime?
   gender                 Gender?
   phone                  String?

@@ -51,7 +51,7 @@ export const createStudentSchema = z
     studentNumber: studentNumberSchema,
     programmeId: cuidSchema,
     admissionAcademicYearId: cuidSchema.optional(),
-    status: z.nativeEnum(StudentStatus).default("ACTIVE"),
+    status: z.nativeEnum(StudentStatus).default("ENROLLED"),
     dateOfBirth: dateOfBirthSchema,
     gender: z.nativeEnum(Gender).optional(),
     phone: phoneSchema,
@@ -93,11 +93,11 @@ export const updateStudentSchema = z
     path: ["changeReason"],
   });
 // Status transitions are a service-layer state machine, not a Zod concern
-// (e.g. GRADUATED → ACTIVE should never be allowed; WITHDRAWN is terminal).
+// (e.g. COMPLETED → ENROLLED should never be allowed; WITHDRAWN is terminal).
 // Documented here so it isn't mistaken for an oversight:
-// Valid forward transitions: ACTIVE ⇄ DEFERRED, ACTIVE ⇄ SUSPENDED,
-// ACTIVE → GRADUATED, ACTIVE/DEFERRED/SUSPENDED → WITHDRAWN,
-// ACTIVE/SUSPENDED → EXPELLED. GRADUATED/WITHDRAWN/EXPELLED are terminal.
+// Valid forward transitions: ENROLLED ⇄ DEFERRED, ENROLLED ⇄ SUSPENDED,
+// ENROLLED → COMPLETED, ENROLLED/DEFERRED/SUSPENDED → WITHDRAWN,
+// ENROLLED/SUSPENDED → EXPELLED. COMPLETED/WITHDRAWN/EXPELLED are terminal.
 export const studentQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
   programmeId: z.string().cuid().optional(),

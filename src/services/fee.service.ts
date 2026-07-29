@@ -129,7 +129,7 @@ export async function bulkAssignFeesForProgramme(
   semester: Semester
 ) {
   const students = await prisma.student.findMany({
-    where: { programmeId, deletedAt: null, status: "ACTIVE" },
+    where: { programmeId, deletedAt: null, status: "ENROLLED" },
     select: { id: true },
   });
 

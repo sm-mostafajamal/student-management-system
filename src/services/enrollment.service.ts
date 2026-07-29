@@ -24,7 +24,7 @@ export type EnrollStudentInput = z.infer<typeof EnrollStudentSchema>;
  * Enrolls a student in a course offering.
  *
  * Guards:
- * 1. Student exists and is ACTIVE
+ * 1. Student exists and is ENROLLED
  * 2. Offering exists and is not deleted
  * 3. Student not already enrolled (or previously dropped — allows re-enroll)
  * 4. Capacity not exceeded
@@ -48,10 +48,10 @@ export async function enrollStudent(
     assertFound(student, "Student");
     assertFound(offering, "Course offering");
 
-    if (student.status !== "ACTIVE") {
+    if (student.status !== "ENROLLED") {
       throw new AppError(
         "FORBIDDEN",
-        `Student status is ${student.status} — enrollment requires ACTIVE status`
+        `Student status is ${student.status} — enrollment requires ENROLLED status`
       );
     }
 

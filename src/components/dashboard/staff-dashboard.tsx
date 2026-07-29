@@ -39,7 +39,7 @@ export async function StaffDashboard({ session }: StaffDashboardProps) {
     currentAcademicYear,
   ] = await Promise.all([
     prisma.student.count({ where: { deletedAt: null } }),
-    prisma.student.count({ where: { deletedAt: null, status: StudentStatus.ACTIVE } }),
+    prisma.student.count({ where: { deletedAt: null, status: StudentStatus.ENROLLED } }),
     prisma.student.count({
       where: {
         deletedAt: null,
@@ -173,7 +173,7 @@ export async function StaffDashboard({ session }: StaffDashboardProps) {
                     <span className={`
                       inline-block text-[10px] font-semibold uppercase tracking-wider
                       rounded px-2 py-0.5
-                      ${student.status === "ACTIVE"
+                      ${student.status === "ENROLLED"
                         ? "bg-[hsl(var(--success-bg))] text-[hsl(var(--success))]"
                         : "bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning))]"
                       }

@@ -155,7 +155,7 @@ async function main() {
     data: { courseId: courseGEN100.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, instructorId: lecturerAfolabi.id, capacity: 100 },
   });
 
-  // Past, completed offering — used for the GRADUATED student's history.
+  // Past, completed offering — used for the COMPLETED student's history.
   const offBA150_2024 = await prisma.courseOffering.create({
     data: { courseId: courseBA150.id, academicYearId: ay2024.id, semester: Semester.SECOND_SEMESTER, instructorId: lecturerAfolabi.id, capacity: 50 },
   });
@@ -166,8 +166,8 @@ async function main() {
   const user1 = await prisma.user.create({ data: { email: "chidinma.eze@pen.edu.ng", firstName: "Chidinma", lastName: "Eze", role: Role.STUDENT } });
   const student1 = await prisma.student.create({
     data: {
-      userId: user1.id, studentNumber: "PEN/2025/00001", programmeId: progCS.id,
-      admissionAcademicYearId: ay2025.id, status: StudentStatus.ACTIVE,
+      userId: user1.id, studentNumber: "SMS-2025-0001", programmeId: progCS.id,
+      admissionAcademicYearId: ay2025.id, status: StudentStatus.ENROLLED,
       dateOfBirth: new Date("2003-05-14"), gender: Gender.FEMALE, phone: "+2348031234501",
     },
   });
@@ -175,8 +175,8 @@ async function main() {
   const user2 = await prisma.user.create({ data: { email: "emeka.obi@pen.edu.ng", firstName: "Emeka", lastName: "Obi", role: Role.STUDENT } });
   const student2 = await prisma.student.create({
     data: {
-      userId: user2.id, studentNumber: "PEN/2025/00002", programmeId: progCS.id,
-      admissionAcademicYearId: ay2025.id, status: StudentStatus.ACTIVE,
+      userId: user2.id, studentNumber: "SMS-2025-0002", programmeId: progCS.id,
+      admissionAcademicYearId: ay2025.id, status: StudentStatus.ENROLLED,
       dateOfBirth: new Date("2002-11-02"), gender: Gender.MALE, phone: "+2348031234502",
     },
   });
@@ -186,7 +186,7 @@ async function main() {
   const user3 = await prisma.user.create({ data: { email: "fatima.ibrahim@pen.edu.ng", firstName: "Fatima", lastName: "Ibrahim", role: Role.STUDENT } });
   const student3 = await prisma.student.create({
     data: {
-      userId: user3.id, studentNumber: "PEN/2024/00015", programmeId: progBA.id,
+      userId: user3.id, studentNumber: "SMS-2024-00015", programmeId: progBA.id,
       admissionAcademicYearId: ay2024.id, status: StudentStatus.SUSPENDED,
       dateOfBirth: new Date("2001-08-20"), gender: Gender.FEMALE, phone: "+2348031234503",
     },
@@ -197,35 +197,35 @@ async function main() {
   const user4 = await prisma.user.create({ data: { email: "john.okafor@pen.edu.ng", firstName: "John", lastName: "Okafor", role: Role.STUDENT } });
   const student4 = await prisma.student.create({
     data: {
-      userId: user4.id, studentNumber: "PEN/2024/00016", programmeId: progCS.id,
+      userId: user4.id, studentNumber: "SMS-2024-00016", programmeId: progCS.id,
       admissionAcademicYearId: ay2024.id, status: StudentStatus.DEFERRED,
       dateOfBirth: new Date("2002-01-10"), gender: Gender.MALE, phone: "+2348031234504",
     },
   });
 
-  // GRADUATED — legacy admission (admissionAcademicYearId left null on
+  // COMPLETED — legacy admission (admissionAcademicYearId left null on
   // purpose, proving that field's nullability isn't a design gap).
   const user5 = await prisma.user.create({ data: { email: "blessing.umeh@pen.edu.ng", firstName: "Blessing", lastName: "Umeh", role: Role.STUDENT } });
   const student5 = await prisma.student.create({
     data: {
-      userId: user5.id, studentNumber: "PEN/2021/00003", programmeId: progBA.id,
-      admissionAcademicYearId: null, status: StudentStatus.GRADUATED,
+      userId: user5.id, studentNumber: "SMS-2021-00003", programmeId: progBA.id,
+      admissionAcademicYearId: null, status: StudentStatus.COMPLETED,
       dateOfBirth: new Date("1999-03-30"), gender: Gender.FEMALE, phone: "+2348031234505",
       expectedGraduationDate: new Date("2025-07-31"),
     },
   });
 
-  // ACTIVE with a partially paid fee — the "PARTIALLY_PAID" status path.
+  // ENROLLED with a partially paid fee — the "PARTIALLY_PAID" status path.
   const user6 = await prisma.user.create({ data: { email: "samuel.danladi@pen.edu.ng", firstName: "Samuel", lastName: "Danladi", role: Role.STUDENT } });
   const student6 = await prisma.student.create({
     data: {
-      userId: user6.id, studentNumber: "PEN/2025/00003", programmeId: progCS.id,
-      admissionAcademicYearId: ay2025.id, status: StudentStatus.ACTIVE,
+      userId: user6.id, studentNumber: "SMS-2025-00003", programmeId: progCS.id,
+      admissionAcademicYearId: ay2025.id, status: StudentStatus.ENROLLED,
       dateOfBirth: new Date("2003-07-07"), gender: Gender.MALE, phone: "+2348031234506",
     },
   });
 
-  console.log("✅ 6 students created (ACTIVE ×3, SUSPENDED, DEFERRED, GRADUATED)");
+  console.log("✅ 6 students created (ENROLLED ×3, SUSPENDED, DEFERRED, COMPLETED)");
 
   // ── Enrollments ─────────────────────────────────────────────────
   await prisma.enrollment.createMany({

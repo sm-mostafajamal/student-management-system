@@ -6,12 +6,12 @@ import { dropEnrollmentAction } from "@/app/actions/enrollment-actions";
 
 interface RosterEnrollment {
   id: string;
-  status: string; // EnrollmentStatus, e.g. "ACTIVE"
+  status: string; // EnrollmentStatus, e.g. "ENROLLED"
   student: {
     id: string;
     fullName: string;
     email: string;
-    status: string; // StudentStatus, e.g. "ACTIVE" | "WITHDRAWN" | "SUSPENDED"
+    status: string; // StudentStatus, e.g. "ENROLLED" | "WITHDRAWN" | "SUSPENDED"
   };
 }
 
