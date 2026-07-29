@@ -1,39 +1,33 @@
+// src/lib/auth-helpers.ts
 /**
  * Auth helpers for Server Actions and Route Handlers.
- *
- * Centralised here so all actions call one function and we can swap auth
- * providers (NextAuth → Clerk → custom) in one place.
- *
- * If you are using NextAuth v5 (Auth.js), replace the body with:
- *   import { auth } from "@/auth";
- *   const session = await auth();
+ * Reads the demo session/role from cookies (see src/lib/role.ts) — this
+ * project uses a role-toggle instead of real authentication, per the
+ * assessment's "auth optional" constraint.
  */
 
-import { auth } from "@/auth"; // adjust to your auth import
 import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/session";
 
 export async function getSession() {
-  return auth();
+  const user = await getSessionUser();
+  return user ? { user } : null;
 }
 
-/** Throws a redirect to /login if the user is not authenticated. */
+/** Redirects to the landing page if no demo role/user is active. */
 export async function requireAuth() {
   const session = await getSession();
   if (!session?.user) {
-    redirect("/login");
+    redirect("/");
   }
   return session;
 }
 
-/**
- * Throws a redirect to /unauthorized if the user is not STAFF or ADMIN.
- * Used by every write Server Action in this module.
- */
+/** Redirects to /dashboard if the active demo user isn't STAFF. */
 export async function requireStaff() {
   const session = await requireAuth();
-  const role = (session.user as { role?: string }).role;
-  if (role !== "STAFF" && role !== "ADMIN") {
-    redirect("/unauthorized");
+  if (session.user.role !== "STAFF") {
+    redirect("/dashboard");
   }
   return session;
 }
