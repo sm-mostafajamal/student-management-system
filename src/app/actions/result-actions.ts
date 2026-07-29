@@ -36,7 +36,7 @@ export async function recordGradeAction(
 
   try {
     const grade = await recordGrade(parsed.data, user);
-    revalidatePath(`/staff/course-offerings/${parsed.data.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${parsed.data.courseOfferingId}/marksheet`);
     return { success: true, data: { id: grade.id } };
   } catch (err) {
     if (err instanceof DomainError) {

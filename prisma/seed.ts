@@ -13,7 +13,6 @@ import {
   Semester,
   EnrollmentStatus,
   FeeCategory,
-  FeeCategory,
   FeeStatus,
   PaymentMethod,
   PaymentStatus,

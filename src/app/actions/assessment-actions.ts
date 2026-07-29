@@ -37,7 +37,7 @@ export async function createAssessmentAction(
 
   try {
     const assessment = await createAssessment(parsed.data, user);
-    revalidatePath(`/staff/course-offerings/${parsed.data.courseOfferingId}/assessments`);
+    revalidatePath(`/course-offerings/${parsed.data.courseOfferingId}/assessments`);
     return { success: true, data: { id: assessment.id } };
   } catch (err) {
     if (err instanceof DomainError) {
