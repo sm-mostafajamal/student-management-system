@@ -69,7 +69,7 @@ export const NAV_CONFIG: NavSection[] = [
       },
       {
         label: "My Grades",
-        href: "/my-grades",
+        href: "/results",
         icon: "BarChart2",
         roles: [Role.STUDENT],
       },

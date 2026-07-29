@@ -1,131 +1,101 @@
-// Records and reverses payments. This file is the answer to two of the
-// hardest requirements: "prevent overpayment" and "concurrent payment
-// attempts" — both are solved by the SAME mechanism, a row lock.
+// ─────────────────────────────────────────────
+// ADDED FOR /payments STAFF LEDGER — read-only, no business logic.
+// Matches this file's existing conventions: throws plain/custom Errors,
+// returns raw shapes (no ApiResult wrapper) — NOT fee.service.ts's style.
+// ─────────────────────────────────────────────
 
-import { prisma } from "@/lib/prisma";
-import { Prisma, PaymentMethod } from "@prisma/client";
-import { syncFeeStatus } from "./fee.service";
-
-export class OverpaymentError extends Error {
-  constructor(
-    public balance: number,
-    public attempted: number
-  ) {
-    super(`Payment of ${attempted} exceeds the outstanding balance of ${balance}.`);
-  }
+export interface ListPaymentsFilters {
+  studentId?: string;
+  method?: PaymentMethod;
+  status?: "COMPLETED" | "FAILED" | "REVERSED";
+  dateFrom?: Date;
+  dateTo?: Date;
+  /** Matches student name or studentNumber, case-insensitive. */
+  search?: string;
+  page?: number;
+  pageSize?: number;
 }
-export class DuplicatePaymentReferenceError extends Error {
-  constructor(reference: string) {
-    super(`A payment with reference "${reference}" has already been recorded. Check before re-submitting.`);
-  }
-}
-export class FeeNotFoundError extends Error {}
 
-interface RecordPaymentInput {
-  feeId: string;
+export interface PaymentLedgerRow {
+  id: string;
+  reference: string;
   amount: number;
   method: PaymentMethod;
-  reference: string;
+  status: "COMPLETED" | "FAILED" | "REVERSED";
   paidAt: Date;
-  recordedById: string;
+  studentId: string;
+  studentNumber: string;
+  studentName: string;
+  feeCategory: string;
+  recordedByName: string;
+  reversedByName: string | null;
+  reversedAt: Date | null;
+  reversalReason: string | null;
 }
 
-const EPSILON = 0.005; // tolerate sub-cent floating rounding only, never a real over/under-payment
+export async function listPayments(
+  filters: ListPaymentsFilters
+): Promise<{ items: PaymentLedgerRow[]; total: number }> {
+  const page = filters.page ?? 1;
+  const pageSize = filters.pageSize ?? 25;
 
-/**
- * Records a payment, atomically re-checking the balance to prevent both
- * overpayment and concurrent double-spend.
- *
- * Concurrency strategy: `SELECT ... FOR UPDATE` takes a row lock on the Fee
- * for the lifetime of the transaction. If two staff members submit a
- * payment for the SAME fee at the same instant:
- *   1. Transaction A locks the Fee row, reads balance = 500, inserts a
- *      500 payment, commits, releasing the lock.
- *   2. Transaction B was blocked on the lock — it only proceeds after A
- *      commits, then re-reads the payment sum (now includes A's payment),
- *      sees balance = 0, and correctly throws OverpaymentError.
- * Without the lock, both transactions could read the same stale
- * "balance = 500" snapshot and both succeed, producing a 500 overpayment.
- *
- * Idempotency: Payment.reference has a DB-level unique constraint — a
- * duplicate submission (double-click, retried network request) is rejected
- * even if it somehow bypassed the lock logic above.
- */
-export async function recordPayment(input: RecordPaymentInput) {
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const feeRows = await tx.$queryRaw<
-        Array<{ 
-          id: string; 
-          studentId: string; 
-          amountDue: Prisma.Decimal; 
-          waivedAmount: Prisma.Decimal; 
-          status: string 
-        }>
-      >`SELECT id, "studentId", "amountDue", "waivedAmount", status FROM "Fee" WHERE id = ${input.feeId} FOR UPDATE`;
+  const where: Prisma.PaymentWhereInput = {
+    ...(filters.studentId ? { studentId: filters.studentId } : {}),
+    ...(filters.method ? { method: filters.method } : {}),
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.dateFrom || filters.dateTo
+      ? {
+          paidAt: {
+            ...(filters.dateFrom ? { gte: filters.dateFrom } : {}),
+            ...(filters.dateTo ? { lte: filters.dateTo } : {}),
+          },
+        }
+      : {}),
+    ...(filters.search
+      ? {
+          student: {
+            OR: [
+              { studentNumber: { contains: filters.search, mode: "insensitive" } },
+              { user: { firstName: { contains: filters.search, mode: "insensitive" } } },
+              { user: { lastName: { contains: filters.search, mode: "insensitive" } } },
+            ],
+          },
+        }
+      : {}),
+  };
 
-      const fee = feeRows[0];
-      if (!fee) throw new FeeNotFoundError("Fee record not found.");
-      if (fee.status === "CANCELLED") {
-        throw new FeeNotFoundError("This fee has been cancelled and cannot accept payments.");
-      }
+  const [rows, total] = await prisma.$transaction([
+    prisma.payment.findMany({
+      where,
+      include: {
+        student: { include: { user: true } },
+        fee: { select: { category: true } },
+        recordedBy: { select: { firstName: true, lastName: true } },
+        reversedBy: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { paidAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.payment.count({ where }),
+  ]);
 
-      const paidAgg = await tx.payment.aggregate({
-        where: { feeId: input.feeId, status: "COMPLETED" },
-        _sum: { amount: true },
-      });
-      const totalPaid = Number(paidAgg._sum.amount ?? 0);
-      const balance = Number(fee.amountDue) - Number(fee.waivedAmount) - totalPaid;
+  const items: PaymentLedgerRow[] = rows.map((p) => ({
+    id: p.id,
+    reference: p.reference,
+    amount: Number(p.amount),
+    method: p.method,
+    status: p.status as "COMPLETED" | "FAILED" | "REVERSED",
+    paidAt: p.paidAt,
+    studentId: p.studentId,
+    studentNumber: p.student.studentNumber,
+    studentName: `${p.student.user.firstName} ${p.student.user.lastName}`,
+    feeCategory: p.fee.category,
+    recordedByName: `${p.recordedBy.firstName} ${p.recordedBy.lastName}`,
+    reversedByName: p.reversedBy ? `${p.reversedBy.firstName} ${p.reversedBy.lastName}` : null,
+    reversedAt: p.reversedAt,
+    reversalReason: p.reversalReason,
+  }));
 
-      if (input.amount > balance + EPSILON) {
-        throw new OverpaymentError(round2(balance), input.amount);
-      }
-
-      const payment = await tx.payment.create({
-        data: {
-          feeId: input.feeId,
-          studentId: fee.studentId,
-          reference: input.reference,
-          amount: input.amount,
-          method: input.method,
-          status: "COMPLETED",
-          paidAt: input.paidAt,
-          recordedById: input.recordedById,
-        },
-      });
-
-      await syncFeeStatus(input.feeId, tx);
-      return payment;
-    });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new DuplicatePaymentReferenceError(input.reference);
-    }
-    throw err;
-  }
-}
-
-/**
- * Payments are NEVER deleted — a bounced cheque, wrong amount, or wrong
- * student is corrected by reversal, preserving a full audit trail
- * (who reversed it, when, why). Reversing frees up balance for the student
- * automatically via syncFeeStatus.
- */
-export async function reversePayment(paymentId: string, reversedById: string, reason: string) {
-  return prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
-    if (payment.status === "REVERSED") {
-      throw new Error("This payment has already been reversed.");
-    }
-    const reversed = await tx.payment.update({
-      where: { id: paymentId },
-      data: { status: "REVERSED", reversedById, reversedAt: new Date(), reversalReason: reason },
-    });
-    await syncFeeStatus(payment.feeId, tx);
-    return reversed;
-  });
-}
-
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
+  return { items, total };
 }

@@ -467,6 +467,35 @@ export async function listOverdueFees() {
 }
 
 /**
+ * Live overdue COUNT for KPI cards (e.g. staff dashboard). Same WHERE
+ * logic as listOverdueFees() — dueDate + balance computed from payments,
+ * never the cached Fee.status column — so a fee that lapses past its
+ * dueDate with zero payment activity is counted immediately, without
+ * waiting for an unrelated payment/reversal event to call syncFeeStatus()
+ * on it. Returns just a count, so it skips the Student/User joins that
+ * listOverdueFees() needs for its row display.
+ */
+export async function countOverdueFees(): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) AS count
+    FROM "Fee" f
+    LEFT JOIN (
+      SELECT "feeId", SUM(amount) AS total_paid
+      FROM "Payment"
+      WHERE status = 'COMPLETED'
+      GROUP BY "feeId"
+    ) p ON p."feeId" = f.id
+    JOIN "Student" s ON s.id = f."studentId"
+    WHERE f."dueDate" IS NOT NULL
+      AND f."dueDate" < NOW()
+      AND f.status NOT IN ('WAIVED', 'CANCELLED')
+      AND f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0) > 0
+      AND s."deletedAt" IS NULL
+  `;
+  return Number(rows[0]?.count ?? 0);
+}
+
+/**
  * Reconciles the cached `status` column with the real balance. Called after
  * every payment/reversal so the dashboard filter stays accurate without a
  * cron job. Never overrides WAIVED/CANCELLED — those are explicit staff

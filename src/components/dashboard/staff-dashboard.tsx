@@ -17,9 +17,10 @@ import {
 import { Header } from "@/components/layout/header";
 import { StatCard, StatCardGrid } from "./stat-card";
 import prisma from "@/lib/prisma";
-import { StudentStatus, FeeStatus, EnrollmentStatus } from "@prisma/client";
+import { StudentStatus, EnrollmentStatus } from "@prisma/client";
 import type { SessionUser } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { countOverdueFees } from "@/services/fee.service";
 
 interface StaffDashboardProps {
   session: SessionUser;
@@ -48,7 +49,13 @@ export async function StaffDashboard({ session }: StaffDashboardProps) {
       },
     }),
     prisma.enrollment.count({ where: { status: EnrollmentStatus.ENROLLED } }),
-    prisma.fee.count({ where: { status: FeeStatus.OVERDUE } }),
+    // Computed live from dueDate + balance (same logic as listOverdueFees()
+    // in fee.service.ts), not from the cached Fee.status column — that
+    // cache is only refreshed by syncFeeStatus() after a payment/reversal
+    // event, so a fee that simply passes its dueDate with no payment
+    // activity would stay invisible to this KPI until an unrelated
+    // payment touched it.
+    countOverdueFees(),
     prisma.grade.count({ where: { isPublished: false } }),
     prisma.student.findMany({
       where: { deletedAt: null },
