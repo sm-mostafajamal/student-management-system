@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   LayoutDashboard, Users, BookOpen, GraduationCap, ClipboardList,
   BookMarked, BarChart2, FileText, Award, CreditCard, Banknote, Receipt,
-  LucideProps,
+  LucideProps,CalendarDays,     
 } from "lucide-react";
 import { Role } from "@prisma/client";
 import { getNavSectionsForRole } from "@/lib/nav-config";
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 type IconName =
   | "LayoutDashboard" | "Users" | "BookOpen" | "GraduationCap"
   | "ClipboardList" | "BookMarked" | "BarChart2" | "FileText"
-  | "Award" | "CreditCard" | "Banknote" | "Receipt";
+  | "Award" | "CreditCard" | "Banknote" | "Receipt" | "CalendarDays"; 
 
 const ICON_MAP: Record<IconName, React.ComponentType<LucideProps>> = {
   LayoutDashboard,
@@ -33,6 +33,7 @@ const ICON_MAP: Record<IconName, React.ComponentType<LucideProps>> = {
   CreditCard,
   Banknote,
   Receipt,
+  CalendarDays,
 };
 
 

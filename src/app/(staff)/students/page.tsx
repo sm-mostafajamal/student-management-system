@@ -8,12 +8,14 @@ import { listProgrammesForFilter } from "@/services/reference-data.service";
 import { StudentsFilters } from "@/components/students/students-filters";
 import { StudentsTable } from "@/components/students/students-table";
 import { StudentsTableSkeleton } from "@/components/students/students-table-skeleton";
-
+import { getSessionUser } from "@/lib/session"; 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function StudentsPage({ searchParams }: PageProps) {
+  const user = await getSessionUser();                 
+  if (!user || user.role !== "STAFF") redirect("/");  
   const raw = await searchParams;
   const query = studentQuerySchema.parse({
     search: typeof raw.search === "string" ? raw.search : undefined,

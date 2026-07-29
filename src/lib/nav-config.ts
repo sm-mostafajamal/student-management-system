@@ -51,6 +51,12 @@ export const NAV_CONFIG: NavSection[] = [
         roles: [Role.STAFF],
       },
       {
+        label: "Course Offerings",             
+        href: "/course-offerings",
+        icon: "CalendarDays",
+        roles: [Role.STAFF],
+      },
+      {
         label: "Enrollments",
         href: "/enrollments",
         icon: "ClipboardList",

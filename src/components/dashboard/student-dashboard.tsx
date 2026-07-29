@@ -7,7 +7,7 @@
  * rather than crashing. In production this would be a redirect to an
  * onboarding flow.
  */
-
+import Link from "next/link"; 
 import {
   BookMarked, Award, Receipt, TrendingUp,
   CheckCircle, AlertCircle,
@@ -183,9 +183,9 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">My Courses</h2>
-              <a href="/my-courses" className="text-xs text-primary hover:underline font-medium">
+              <Link href="/my-courses" className="text-xs text-primary hover:underline font-medium">
                 View all →
-              </a>
+              </Link>
             </div>
             {enrollments.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted-foreground text-center">
@@ -221,9 +221,9 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Recent Grades</h2>
-              <a href="/my-grades" className="text-xs text-primary hover:underline font-medium">
+              <Link href="/my-grades" className="text-xs text-primary hover:underline font-medium">
                 View all →
-              </a>
+              </Link>
             </div>
             {publishedGrades.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted-foreground text-center">
