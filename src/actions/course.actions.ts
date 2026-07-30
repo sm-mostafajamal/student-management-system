@@ -27,9 +27,8 @@ export async function createCourseAction(
 
   const raw = {
     code: formData.get("code"),
-    name: formData.get("name"),
-    description: formData.get("description") || undefined,
-    credits: Number(formData.get("credits")),
+    title: formData.get("title"),
+    creditHours: Number(formData.get("creditHours")),
     programmeId: formData.get("programmeId"),
   };
 
@@ -64,9 +63,8 @@ export async function updateCourseAction(
   const raw = {
     id: formData.get("id"),
     code: formData.get("code"),
-    name: formData.get("name"),
-    description: formData.get("description") || undefined,
-    credits: Number(formData.get("credits")),
+    title: formData.get("title"),
+    creditHours: Number(formData.get("creditHours")),
     programmeId: formData.get("programmeId"),
     isActive: formData.get("isActive") === "true",
   };

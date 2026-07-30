@@ -9,9 +9,9 @@ import { LandingRolePicker } from "@/components/shared/landing-role-picker";
 export default async function RootPage() {
   const session = await getSessionUser();
 
-  if (session) {
-    redirect("/dashboard");
-  }
+  // if (session) {
+  //   redirect("/dashboard");
+  // }
 
   return <LandingRolePicker />;
 }

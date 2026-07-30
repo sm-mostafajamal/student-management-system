@@ -11,8 +11,15 @@ export default async function MyFeesPage() {
     where: { studentId: user.studentId },
     orderBy: { createdAt: "desc" },
   });
-  const balances = await Promise.all(fees.map((f) => computeFeeBalance(f.id)));
-  const summary = await getStudentFinancialSummary(user.studentId);
+  const balanceResults = await Promise.all(fees.map((f) => computeFeeBalance(f.id)));
+  const balances = balanceResults.map((r) =>
+    r.success ? r.data : { feeId: "", amountDue: 0, waivedAmount: 0, totalPaid: 0, balance: 0, status: "PENDING" as const, isOverdue: false }
+  );
+
+  const summaryResult = await getStudentFinancialSummary(user.studentId);
+  const summary = summaryResult.success
+    ? summaryResult.data
+    : { studentId: user.studentId, totalOwed: 0, totalPaid: 0, totalWaived: 0, outstandingBalance: 0, hasOverdueFees: false };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">

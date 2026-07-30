@@ -38,21 +38,16 @@ export const CreateCourseSchema = z.object({
     .max(20, "Code must be at most 20 characters")
     .regex(/^[A-Z0-9-]+$/, "Code must be uppercase letters, numbers, or hyphens")
     .transform((v) => v.trim().toUpperCase()),
-  name: z
+  title: z
     .string()
-    .min(3, "Name must be at least 3 characters")
-    .max(120, "Name must be at most 120 characters")
+    .min(3, "Title must be at least 3 characters")
+    .max(120, "Title must be at most 120 characters")
     .transform((v) => v.trim()),
-  description: z
-    .string()
-    .max(500)
-    .optional()
-    .transform((v) => v?.trim() || undefined),
-  credits: z
+  creditHours: z
     .number()
-    .int("Credits must be a whole number")
-    .min(1, "Credits must be at least 1")
-    .max(12, "Credits must be at most 12"),
+    .int("Credit hours must be a whole number")
+    .min(1, "Credit hours must be at least 1")
+    .max(12, "Credit hours must be at most 12"),
   programmeId: z.string().cuid("Invalid programme ID"),
 });
 
@@ -66,7 +61,7 @@ export type UpdateCourseInput = z.infer<typeof UpdateCourseSchema>;
 
 // ─── Course Offering ──────────────────────────────────────────────────────────
 
-export const SemesterEnum = z.enum(["FALL", "SPRING", "SUMMER"]);
+export const SemesterEnum = z.enum(["FIRST_SEMESTER", "SECOND_SEMESTER", "SUMMER_SEMESTER"]);
 
 export const CreateOfferingSchema = z.object({
   courseId: z.string().cuid("Invalid course ID"),

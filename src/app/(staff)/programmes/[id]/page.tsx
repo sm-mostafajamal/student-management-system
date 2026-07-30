@@ -119,10 +119,10 @@ export default async function ProgrammeDetailPage({ params }: PageProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                      {course.name}
+                      {course.title}
                     </td>
                     <td className="px-4 py-3 text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
-                      {course.credits}
+                      {course.creditHours}
                     </td>
                     <td className="px-4 py-3 text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
                       {course._count.offerings}

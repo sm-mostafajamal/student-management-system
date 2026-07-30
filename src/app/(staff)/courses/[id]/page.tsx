@@ -12,9 +12,9 @@ interface PageProps {
 }
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FALL: "Fall",
-  SPRING: "Spring",
-  SUMMER: "Summer",
+  FIRST_SEMESTER: "Fall",
+  SECOND_SEMESTER: "Spring",
+  SUMMER_SEMESTER: "Summer",
 };
 
 export async function generateMetadata({ params }: PageProps) {
@@ -48,7 +48,7 @@ export default async function CourseDetailPage({ params }: PageProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                {course.name}
+                {course.title}
               </h1>
               <StatusBadge active={course.isActive} />
             </div>

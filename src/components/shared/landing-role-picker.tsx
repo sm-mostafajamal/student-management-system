@@ -132,10 +132,6 @@ export function LandingRolePicker() {
             </div>
           )}
 
-          <p className="text-center text-xs text-muted-foreground">
-            Demo system — no real credentials required.{" "}
-            <span className="font-medium">Run the seed script</span> to populate demo data.
-          </p>
         </div>
       </div>
     </div>

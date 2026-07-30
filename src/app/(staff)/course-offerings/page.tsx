@@ -17,9 +17,9 @@ interface PageProps {
 export const metadata = { title: "Course Offerings — Registry" };
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FALL: "Fall",
-  SPRING: "Spring",
-  SUMMER: "Summer",
+  FIRST_SEMESTER: "Fall",
+  SECOND_SEMESTER: "Spring",
+  SUMMER_SEMESTER: "Summer",
 };
 
 export default async function CourseOfferingsPage({ searchParams }: PageProps) {

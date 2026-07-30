@@ -9,17 +9,19 @@ import type { ActionResult } from "@/actions/programme.actions";
 import { FormError, FieldError } from "@/components/ui/form-error";
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FALL: "Fall",
-  SPRING: "Spring",
-  SUMMER: "Summer",
+  FIRST_SEMESTER: "Fall",
+  SECOND_SEMESTER: "Spring",
+  SUMMER_SEMESTER: "Summer",
 };
 
 interface OfferingFormProps {
   offering?: CourseOffering;
-  courses: Pick<Course, "id" | "code" | "name">[];
-  academicYears: Pick<AcademicYear, "id" | "label">[];
-  instructors: Pick<User, "id" | "name" | "email">[];
+  courses: Pick<Course, "id" | "code" | "title">[];
+  academicYears: Pick<AcademicYear, "id" | "name">[];
+  instructors: Pick<User, "id" | "firstName" | "lastName" | "email">[];
   defaultCourseId?: string;
+  /** Current enrollment count — passed explicitly since it's not a column on CourseOffering. */
+  enrolledCount?: number;
 }
 
 const initialState: ActionResult | null = null;
@@ -30,6 +32,7 @@ export function OfferingForm({
   academicYears,
   instructors,
   defaultCourseId,
+  enrolledCount = 0,
 }: OfferingFormProps) {
   const isEdit = Boolean(offering);
   const action = isEdit ? updateOfferingAction : createOfferingAction;
@@ -101,7 +104,12 @@ export function OfferingForm({
             <span className="ml-1 text-red-500">*</span>
           </label>
           {isEdit ? (
-            <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
+            <>
+              <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
+              <p className="mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                {academicYears.find((y) => y.id === offering!.academicYearId)?.name ?? "—"} (locked)
+              </p>
+            </>
           ) : (
             <select
               id="academicYearId"
@@ -172,7 +180,7 @@ export function OfferingForm({
           <option value="">Select instructor…</option>
           {instructors.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.name} ({i.email})
+              {i.firstName} {i.lastName} ({i.email})
             </option>
           ))}
         </select>
@@ -202,9 +210,9 @@ export function OfferingForm({
           className="mt-1.5 block w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         />
         <FieldError message={fieldError("capacity")} />
-        {isEdit && offering && offering.enrolled > 0 && (
+        {isEdit && enrolledCount > 0 && (
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {offering.enrolled} student(s) currently enrolled — capacity cannot go below this.
+            {enrolledCount} student(s) currently enrolled — capacity cannot go below this.
           </p>
         )}
       </div>
@@ -216,16 +224,16 @@ export function OfferingForm({
             id="isActive"
             name="isActive"
             type="checkbox"
+            value="true"
             defaultChecked={offering!.isActive}
-            onChange={(e) => {
-              e.target.form!.elements.namedItem("isActiveHidden")!;
-            }}
             className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label htmlFor="isActive" className="text-sm text-zinc-700 dark:text-zinc-300">
             Offering is active (students can enroll)
           </label>
-          {/* Checkboxes don't submit when unchecked — use a separate hidden pattern */}
+          {/* Checkboxes are omitted from FormData when unchecked, so this hidden
+              fallback carries "false" in that case. When checked, both inputs are
+              submitted and formData.get() returns the checkbox's "true" first. */}
           <input type="hidden" name="isActive" value="false" />
         </div>
       )}

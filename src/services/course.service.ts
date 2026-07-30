@@ -57,7 +57,7 @@ export async function listCourses(opts?: {
     ...(search && {
       OR: [
         { code: { contains: search, mode: "insensitive" } },
-        { name: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: "insensitive" } },
       ],
     }),
   };
@@ -250,6 +250,7 @@ export async function createOffering(input: CreateOfferingInput) {
   }
 }
 
+
 export async function updateOffering(input: UpdateOfferingInput) {
   const { id, instructorId, capacity, isActive } = input;
 
@@ -272,14 +273,17 @@ export async function updateOffering(input: UpdateOfferingInput) {
   // Edge-case: prevent reducing capacity below current enrollment
   const offering = await prisma.courseOffering.findUnique({
     where: { id },
-    select: { enrolled: true },
+    select: {
+      _count: { select: { enrollments: { where: { status: "ENROLLED" } } } },
+    },
   });
   if (!offering) {
     throw new ServiceError("Offering not found.", "NOT_FOUND");
   }
-  if (capacity < offering.enrolled) {
+  const enrolledCount = offering._count.enrollments;
+  if (capacity < enrolledCount) {
     throw new ServiceError(
-      `Cannot reduce capacity to ${capacity} — ${offering.enrolled} student(s) are already enrolled in this offering.`,
+      `Cannot reduce capacity to ${capacity} — ${enrolledCount} student(s) are already enrolled in this offering.`,
       "VALIDATION",
       "capacity"
     );

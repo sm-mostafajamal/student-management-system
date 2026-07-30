@@ -95,18 +95,18 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           <FieldError message={fieldError("code")} />
         </div>
 
-        {/* Credits */}
+        {/* Credit Hours */}
         <div>
           <label
-            htmlFor="credits"
+            htmlFor="creditHours"
             className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            Credits
+            Credit Hours
             <span className="ml-1 text-red-500">*</span>
           </label>
           <input
-            id="credits"
-            name="credits"
+            id="creditHours"
+            name="creditHours"
             type="number"
             required
             min={1}
@@ -114,47 +114,29 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
             defaultValue={course?.creditHours ?? 3}
             className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           />
-          <FieldError message={fieldError("credits")} />
+          <FieldError message={fieldError("creditHours")} />
         </div>
       </div>
 
-      {/* Name */}
+      {/* Title */}
       <div>
         <label
-          htmlFor="name"
+          htmlFor="title"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
-          Course Name
+          Course Title
           <span className="ml-1 text-red-500">*</span>
         </label>
         <input
-          id="name"
-          name="name"
+          id="title"
+          name="title"
           type="text"
           required
           defaultValue={course?.title}
           placeholder="e.g. Introduction to Programming"
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
         />
-        <FieldError message={fieldError("name")} />
-      </div>
-
-      {/* Description */}
-      <div>
-        <label
-          htmlFor="description"
-          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
-          Description
-          <span className="ml-1 text-xs text-zinc-400">(optional)</span>
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={3}
-          defaultValue={course?.title ?? ""}
-          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
-        />
+        <FieldError message={fieldError("title")} />
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

@@ -13,9 +13,9 @@ interface PageProps {
 }
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FALL: "Fall",
-  SPRING: "Spring",
-  SUMMER: "Summer",
+  FIRST_SEMESTER: "Fall",
+  SECOND_SEMESTER: "Spring",
+  SUMMER_SEMESTER: "Summer",
 };
 
 export async function generateMetadata({ params }: PageProps) {
@@ -110,6 +110,29 @@ export default async function OfferingDetailPage({ params }: PageProps) {
         ))}
       </div>
 
+      {/* Assessments */}
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Assessments
+          </h2>
+          <Link
+            href={`/course-offerings/${id}/assessments/new`}
+            className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
+          >
+            New assessment
+          </Link>
+        </div>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Create an assessment (title, type, deadline) for this offering, or view all
+          assessments and marksheets on the{" "}
+          <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
+            Assessments
+          </Link>{" "}
+          page.
+        </p>
+      </section>
+
       {/* Edit form */}
       <section>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
@@ -121,6 +144,7 @@ export default async function OfferingDetailPage({ params }: PageProps) {
             courses={[offering.course]}
             academicYears={academicYears}
             instructors={instructors}
+            enrolledCount={offering._count.enrollments}
           />
         </div>
       </section>
