@@ -18,9 +18,9 @@ export function StudentEmptyState({ hasFilters }: { hasFilters: boolean }) {
       <UserRoundPlus className="h-8 w-8 text-muted-foreground" />
       <p className="font-medium text-foreground">No students yet</p>
       <p className="text-sm text-muted-foreground">Get started by enrolling your first student.</p>
-      <Button asChild size="sm" className="mt-2">
-        <Link href="/students/new">New Student</Link>
-      </Button>
+      <Link href={`/students/new`}>
+        <Button>New Student</Button>
+      </Link>
     </div>
   );
 }

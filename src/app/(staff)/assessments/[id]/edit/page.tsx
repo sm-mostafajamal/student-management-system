@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { getAssessmentForEditOr404 } from "@/services/assessment.service";
-import { EditAssessmentForm } from "@/components/assessments/EditAssessmentForm";
+import { EditAssessmentForm } from "@/components/assessments/EditAssessForm";
 import { Role } from "@/types";
 
 export default async function EditAssessmentPage({
