@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { Programme } from "@prisma/client";
+import { ProgrammeLevel } from "@/types";
 import {
   createProgrammeAction,
   updateProgrammeAction,
@@ -101,21 +102,70 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
 
       <div>
         <label
-          htmlFor="description"
+          htmlFor="level"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
-          Description
-          <span className="ml-1 text-xs text-zinc-400">(optional)</span>
+          Level
+          <span className="ml-1 text-red-500">*</span>
         </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={3}
-          defaultValue={programme?.description ?? ""}
-          placeholder="Brief description of the programme…"
+        <select
+          id="level"
+          name="level"
+          required
+          defaultValue={programme?.level ?? ""}
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+        >
+          <option value="" disabled>
+            Select a level…
+          </option>
+          {Object.values(ProgrammeLevel).map((level) => (
+            <option key={level} value={level}>
+              {level.charAt(0) + level.slice(1).toLowerCase()}
+            </option>
+          ))}
+        </select>
+        <FieldError message={fieldError("level")} />
+      </div>
+
+      <div>
+        <label
+          htmlFor="durationYears"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Duration (years)
+          <span className="ml-1 text-red-500">*</span>
+        </label>
+        <input
+          id="durationYears"
+          name="durationYears"
+          type="number"
+          min={1}
+          max={10}
+          required
+          defaultValue={programme?.durationYears}
+          placeholder="e.g. 4"
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
         />
-        <FieldError message={fieldError("description")} />
+        <FieldError message={fieldError("durationYears")} />
+      </div>
+
+      <div>
+        <label
+          htmlFor="departmentName"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Department
+          <span className="ml-1 text-xs text-zinc-400">(optional)</span>
+        </label>
+        <input
+          id="departmentName"
+          name="departmentName"
+          type="text"
+          defaultValue={programme?.departmentName ?? ""}
+          placeholder="e.g. School of Computing"
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        />
+        <FieldError message={fieldError("departmentName")} />
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

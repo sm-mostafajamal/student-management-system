@@ -1,27 +1,24 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import type { CourseOffering, Course, AcademicYear, User } from "@prisma/client";
 import { createOfferingAction, updateOfferingAction } from "@/actions/course.actions";
 import type { ActionResult } from "@/actions/programme.actions";
 import { FormError, FieldError } from "@/components/ui/form-error";
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FIRST_SEMESTER: "Fall",
-  SECOND_SEMESTER: "Spring",
-  SUMMER_SEMESTER: "Summer",
+  FALL: "Fall",
+  SPRING: "Spring",
+  SUMMER: "Summer",
 };
 
 interface OfferingFormProps {
   offering?: CourseOffering;
-  courses: Pick<Course, "id" | "code" | "title">[];
-  academicYears: Pick<AcademicYear, "id" | "name">[];
-  instructors: Pick<User, "id" | "firstName" | "lastName" | "email">[];
+  courses: Pick<Course, "id" | "code" | "name">[];
+  academicYears: Pick<AcademicYear, "id" | "label">[];
+  instructors: Pick<User, "id" | "name" | "email">[];
   defaultCourseId?: string;
-  /** Current enrollment count — passed explicitly since it's not a column on CourseOffering. */
-  enrolledCount?: number;
 }
 
 const initialState: ActionResult | null = null;
@@ -32,13 +29,13 @@ export function OfferingForm({
   academicYears,
   instructors,
   defaultCourseId,
-  enrolledCount = 0,
 }: OfferingFormProps) {
   const isEdit = Boolean(offering);
   const action = isEdit ? updateOfferingAction : createOfferingAction;
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
+  const [isActive, setIsActive] = useState(offering?.isActive ?? true);
 
   useEffect(() => {
     if (state?.success) {
@@ -104,12 +101,7 @@ export function OfferingForm({
             <span className="ml-1 text-red-500">*</span>
           </label>
           {isEdit ? (
-            <>
-              <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
-              <p className="mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
-                {academicYears.find((y) => y.id === offering!.academicYearId)?.name ?? "—"} (locked)
-              </p>
-            </>
+            <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
           ) : (
             <select
               id="academicYearId"
@@ -180,7 +172,7 @@ export function OfferingForm({
           <option value="">Select instructor…</option>
           {instructors.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.firstName} {i.lastName} ({i.email})
+              {i.name} ({i.email})
             </option>
           ))}
         </select>
@@ -210,9 +202,9 @@ export function OfferingForm({
           className="mt-1.5 block w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         />
         <FieldError message={fieldError("capacity")} />
-        {isEdit && enrolledCount > 0 && (
+        {isEdit && offering && offering.enrolled > 0 && (
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {enrolledCount} student(s) currently enrolled — capacity cannot go below this.
+            {offering.enrolled} student(s) currently enrolled — capacity cannot go below this.
           </p>
         )}
       </div>
@@ -220,21 +212,24 @@ export function OfferingForm({
       {/* isActive toggle — edit only */}
       {isEdit && (
         <div className="flex items-center gap-3">
+          {/* Disabled inputs are excluded from FormData — so when the checkbox
+              is checked, this hidden fallback drops out and only the
+              checkbox's "true" is submitted; when unchecked, the checkbox
+              itself drops out and this submits "false". Exactly one value
+              is ever submitted, matching the action's === "true" check. */}
+          <input type="hidden" name="isActive" value="false" disabled={isActive} />
           <input
             id="isActive"
             name="isActive"
             type="checkbox"
             value="true"
-            defaultChecked={offering!.isActive}
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
             className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label htmlFor="isActive" className="text-sm text-zinc-700 dark:text-zinc-300">
             Offering is active (students can enroll)
           </label>
-          {/* Checkboxes are omitted from FormData when unchecked, so this hidden
-              fallback carries "false" in that case. When checked, both inputs are
-              submitted and formData.get() returns the checkbox's "true" first. */}
-          <input type="hidden" name="isActive" value="false" />
         </div>
       )}
 

@@ -27,7 +27,9 @@ export async function createProgrammeAction(
   const raw = {
     code: formData.get("code"),
     name: formData.get("name"),
-    description: formData.get("description") || undefined,
+    level: formData.get("level"),
+    durationYears: formData.get("durationYears"),
+    departmentName: formData.get("departmentName") || undefined,
   };
 
   const parsed = CreateProgrammeSchema.safeParse(raw);
@@ -65,7 +67,9 @@ export async function updateProgrammeAction(
     id: formData.get("id"),
     code: formData.get("code"),
     name: formData.get("name"),
-    description: formData.get("description") || undefined,
+    level: formData.get("level"),
+    durationYears: formData.get("durationYears"),
+    departmentName: formData.get("departmentName") || undefined,
     isActive: formData.get("isActive") === "true",
   };
 

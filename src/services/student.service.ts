@@ -170,7 +170,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
       return tx.student.create({
         data: {
           studentNumber,
-          programmeId: programme.id,
+          programme: { connect: { id: programme.id } },
           admissionAcademicYearId: admissionYear.id,
           dateOfBirth: input.dateOfBirth,
           gender: input.gender,

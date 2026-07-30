@@ -23,10 +23,19 @@ import type { CreateCourseInput, UpdateCourseInput, CreateOfferingInput, UpdateO
 import { Prisma } from "@prisma/client";
 import { ServiceError } from "./programme.service";
 
+// CourseOffering has no `isActive` column in the schema — only `deletedAt`.
+// The UI (offering-form.tsx, courses/[id]/page.tsx) reads/writes `isActive`
+// as if it were a real field, so every read path attaches this derived value.
+function withIsActive<T extends { deletedAt: Date | null }>(
+  offering: T
+): T & { isActive: boolean } {
+  return { ...offering, isActive: offering.deletedAt === null };
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export async function getCourseById(id: string) {
-  return prisma.course.findUnique({
+  const course = await prisma.course.findUnique({
     where: { id },
     include: {
       programme: { select: { id: true, code: true, name: true } },
@@ -40,6 +49,8 @@ export async function getCourseById(id: string) {
       },
     },
   });
+  if (!course) return course;
+  return { ...course, offerings: course.offerings.map(withIsActive) };
 }
 
 export async function listCourses(opts?: {
@@ -145,7 +156,7 @@ export async function updateCourse(input: UpdateCourseInput) {
 // ─── Course Offerings ─────────────────────────────────────────────────────────
 
 export async function getOfferingById(id: string) {
-  return prisma.courseOffering.findUnique({
+  const offering = await prisma.courseOffering.findUnique({
     where: { id },
     include: {
       course: {
@@ -156,18 +167,29 @@ export async function getOfferingById(id: string) {
       _count: { select: { enrollments: true } },
     },
   });
+  if (!offering) return offering;
+  return withIsActive(offering);
 }
 
 export async function listOfferings(opts?: {
   courseId?: string;
   academicYearId?: string;
   instructorId?: string;
+  includeInactive?: boolean;
   page?: number;
   pageSize?: number;
 }) {
-  const { courseId, academicYearId, instructorId, page = 1, pageSize = 20 } = opts ?? {};
+  const {
+    courseId,
+    academicYearId,
+    instructorId,
+    includeInactive = false,
+    page = 1,
+    pageSize = 20,
+  } = opts ?? {};
 
   const where: Prisma.CourseOfferingWhereInput = {
+    ...(!includeInactive && { deletedAt: null }),
     ...(courseId && { courseId }),
     ...(academicYearId && { academicYearId }),
     ...(instructorId && { instructorId }),
@@ -196,7 +218,13 @@ export async function listOfferings(opts?: {
     prisma.courseOffering.count({ where }),
   ]);
 
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  return {
+    items: items.map(withIsActive),
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  };
 }
 
 export async function createOffering(input: CreateOfferingInput) {
@@ -233,7 +261,15 @@ export async function createOffering(input: CreateOfferingInput) {
   }
 
   try {
-    return await prisma.courseOffering.create({ data: input });
+    return await prisma.courseOffering.create({
+      data: {
+        course: { connect: { id: input.courseId } },
+        academicYear: { connect: { id: input.academicYearId } },
+        semester: input.semester,
+        instructor: { connect: { id: input.instructorId } },
+        capacity: input.capacity,
+      },
+    });
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -262,7 +298,7 @@ export async function updateOffering(input: UpdateOfferingInput) {
   if (!instructor) {
     throw new ServiceError("Instructor not found.", "NOT_FOUND", "instructorId");
   }
-  if (instructor.role === "STUDENT") {
+  if (instructor?.role === "STUDENT") {
     throw new ServiceError(
       `"${instructor.firstName} ${instructor.lastName}" is a student, not a staff member.`,
       "VALIDATION",
@@ -292,7 +328,11 @@ export async function updateOffering(input: UpdateOfferingInput) {
   try {
     return await prisma.courseOffering.update({
       where: { id },
-      data: { instructorId, capacity, isActive },
+      data: {
+        instructor: { connect: { id: instructorId } },
+        capacity,
+        deletedAt: isActive ? null : new Date(),
+      },
     });
   } catch (err) {
     if (
