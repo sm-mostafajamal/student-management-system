@@ -30,7 +30,7 @@ Run these in order:
 
 ```bash
 # 1. Clone
-git clone <repo-url>
+git clone https://github.com/sm-mostafajamal/student-management-system.git
 cd student-management-system
 
 # 2. Install dependencies

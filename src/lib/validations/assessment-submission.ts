@@ -19,6 +19,23 @@ export const createAssessmentSchema = z
 
 export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
 
+// Same field rules as create, but every field is optional (partial update).
+export const updateAssessmentSchema = z
+  .object({
+    title: z.string().trim().min(3, "Title must be at least 3 characters.").max(150).optional(),
+    type: z.nativeEnum(AssessmentType).optional(),
+    weightPercentage: z.coerce.number().min(0).max(100).optional(),
+    maxScore: z.coerce.number().positive().optional(),
+    dueDate: z.coerce.date().optional(),
+    gracePeriodMinutes: z.coerce.number().int().min(0).max(24 * 60).optional(),
+    maxAttempts: z.coerce.number().int().min(1).max(10).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Provide at least one field to update.",
+  });
+
+export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>;
+
 export const submitAssessmentSchema = z.object({
   assessmentId: z.string().cuid(),
 });

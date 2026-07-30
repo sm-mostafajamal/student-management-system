@@ -1,15 +1,66 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createAssessmentAction } from "@/app/actions/assessment-actions";
 import { AssessmentType } from "@/types";
 
-export function CreateAssessmentForm({ courseOfferingId }: { courseOfferingId: string }) {
+interface CourseOfferingOption {
+  id: string;
+  semester: string;
+  course: { code: string; title: string };
+  academicYear: { name: string };
+}
+
+export function CreateAssessmentForm({
+  courseOfferings,
+  defaultCourseOfferingId,
+}: {
+  courseOfferings: CourseOfferingOption[];
+  defaultCourseOfferingId?: string;
+}) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState(createAssessmentAction, null);
+
+  useEffect(() => {
+    if (state?.success) {
+      router.push("/assessments");
+      router.refresh();
+    }
+  }, [state, router]);
 
   return (
     <form action={formAction} className="space-y-5">
-      <input type="hidden" name="courseOfferingId" value={courseOfferingId} />
+      <div>
+        <label htmlFor="courseOfferingId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Course
+        </label>
+        <select
+          id="courseOfferingId"
+          name="courseOfferingId"
+          required
+          defaultValue={defaultCourseOfferingId ?? ""}
+          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+        >
+          <option value="" disabled>
+            Select a course offering…
+          </option>
+          {courseOfferings.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.course.code} — {o.course.title} ({o.semester.replaceAll("_", " ")}{" "}
+              {o.academicYear.name})
+            </option>
+          ))}
+        </select>
+        {state && !state.success && state.fieldErrors?.courseOfferingId && (
+          <p className="mt-1 text-sm text-red-600">{state.fieldErrors.courseOfferingId[0]}</p>
+        )}
+        {courseOfferings.length === 0 && (
+          <p className="mt-1 text-sm text-amber-600">
+            No course offerings exist yet — create one first.
+          </p>
+        )}
+      </div>
 
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -125,7 +176,7 @@ export function CreateAssessmentForm({ courseOfferingId }: { courseOfferingId: s
         </div>
       </div>
 
-      {state && !state.success && !state.fieldErrors && (
+      {state && !state.success && (
         <p className="text-sm text-red-600">{state.error}</p>
       )}
       {state && state.success && <p className="text-sm text-emerald-600">Assessment created.</p>}

@@ -68,6 +68,20 @@ export default async function StudentAssessmentPage({ params }: PageProps) {
             {assessment.gracePeriodMinutes > 0 && ` (+${assessment.gracePeriodMinutes}m grace)`}
           </p>
         </div>
+        <div>
+          <p className="text-muted-foreground">Status</p>
+          <p className="font-medium">
+            <span
+              className={
+                !isPastDeadline
+                  ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                  : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+              }
+            >
+              {!isPastDeadline ? "Open" : "Closed"}
+            </span>
+          </p>
+        </div>
       </div>
 
       {submission ? (

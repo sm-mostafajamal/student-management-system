@@ -48,6 +48,28 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-semibold">Assessments</h1>
+        {/* Assessments */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Assessments
+            </h2>
+            <Link
+              href={`/assessments/new`}
+              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
+            >
+              New assessment
+            </Link>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Create an assessment (title, type, deadline) for this offering, or view all
+            assessments and marksheets on the{" "}
+            <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
+              Assessments
+            </Link>{" "}
+            page.
+          </p>
+        </section>
         <p className="text-sm text-muted-foreground">
           All assessments across course offerings. Open a row to view its marksheet or submissions.
         </p>
@@ -125,6 +147,12 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
                         className="text-sm font-medium hover:underline"
                       >
                         Submissions
+                      </Link>
+                      <Link
+                        href={`/assessments/${a.id}/edit`}
+                        className="text-sm font-medium hover:underline"
+                      >
+                        Edit
                       </Link>
                     </div>
                   </td>
