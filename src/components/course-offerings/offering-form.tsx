@@ -82,7 +82,7 @@ export function OfferingForm({
             <option value="">Select a course…</option>
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.code} — {c.name}
+                {c.code} — {c.title}
               </option>
             ))}
           </select>
@@ -112,7 +112,7 @@ export function OfferingForm({
               <option value="">Select year…</option>
               {academicYears.map((y) => (
                 <option key={y.id} value={y.id}>
-                  {y.label}
+                  {y.name}
                 </option>
               ))}
             </select>
@@ -223,7 +223,7 @@ export function OfferingForm({
             className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label htmlFor="isActive" className="text-sm text-zinc-700 dark:text-zinc-300">
-            Offering is active (students can enrol)
+            Offering is active (students can enroll)
           </label>
           {/* Checkboxes don't submit when unchecked — use a separate hidden pattern */}
           <input type="hidden" name="isActive" value="false" />

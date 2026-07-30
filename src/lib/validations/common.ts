@@ -10,7 +10,7 @@ export const cuidSchema = z.string().cuid({ message: "Invalid ID format" });
 // Money: stored as Decimal(10,2) in Postgres. At the API boundary we accept
 // a plain number, but constrain it to 2 decimal places and a sane ceiling
 // to catch fat-finger entry (e.g. accidentally typing 3 extra zeros).
-export const moneySchema = z
+export const moneySchema = z.coerce
   .number({ invalid_type_error: "Amount must be a number" })
   .positive({ message: "Amount must be greater than 0" })
   .max(100_000_000, { message: "Amount exceeds allowed maximum" })
@@ -20,7 +20,7 @@ export const moneySchema = z
 
 // Same as moneySchema but allows 0 — for fields like waivedAmount that
 // legitimately default to zero.
-export const nonNegativeMoneySchema = z
+export const nonNegativeMoneySchema = z.coerce
   .number()
   .nonnegative({ message: "Amount cannot be negative" })
   .max(100_000_000)

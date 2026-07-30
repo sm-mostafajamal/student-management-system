@@ -37,6 +37,9 @@ function toApiResult<T>(err: unknown): ApiResult<T> {
   if (err instanceof AppError) {
     return { success: false, error: err.message, fieldErrors: err.fieldErrors };
   }
+  if (err instanceof Error) {
+    return { success: false, error: err.message };
+  }
   console.error("[fee.actions] unexpected error:", err);
   return { success: false, error: "Something went wrong. Please try again." };
 }

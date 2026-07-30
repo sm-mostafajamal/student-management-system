@@ -1,7 +1,7 @@
 # PEN Global — Student Management System (Registry Module)
 
 A focused Registry web app covering the four workflows a Registry Administrator uses
-daily: student enrolment, fees & payments, assessment submission, and marksheets/results.
+daily: student enrollment, fees & payments, assessment submission, and marksheets/results.
 
 ## Overview
 

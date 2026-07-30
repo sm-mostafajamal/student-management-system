@@ -12,7 +12,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
       disabled={pending || disabled}
       className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
     >
-      {pending ? "Enrolling..." : "Enrol student"}
+      {pending ? "Enrolling..." : "Enroll student"}
     </button>
   );
 }
@@ -38,7 +38,7 @@ export function EnrollStudentForm({
           id="studentId"
           name="studentId"
           required
-          placeholder="e.g. STU-2024-00123"
+          placeholder="e.g. SMS-2024-00123"
           className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
         />
         {state && !state.success && state.fieldErrors?.studentId && (

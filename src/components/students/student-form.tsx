@@ -286,7 +286,7 @@ export function StudentForm(props: Props) {
           Cancel
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving…" : isEdit ? "Save changes" : "Enrol student"}
+          {isPending ? "Saving…" : isEdit ? "Save changes" : "Enroll student"}
         </Button>
       </div>
     </form>

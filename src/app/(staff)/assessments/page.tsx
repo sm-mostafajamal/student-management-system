@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { Role } from "@/types";
 import {
+  AssessmentListRow,
   listAssessments,
   listCourseFilterOptions,
   listProgrammeFilterOptions,
@@ -78,7 +79,7 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
               </tr>
             </thead>
             <tbody>
-              {assessments.map((a) => (
+              {assessments.map((a: AssessmentListRow) => (
                 <tr key={a.id} className="border-t">
                   <td className="p-3">
                     <div className="font-medium">{a.title}</div>

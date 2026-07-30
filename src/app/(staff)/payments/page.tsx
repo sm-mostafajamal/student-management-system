@@ -5,18 +5,19 @@ import { Role } from "@/types";
 import { listPayments } from "@/services/payment.service";
 import { PaymentFilters } from "./payment-filters";
 import { ReversePaymentControl } from "./reverse-payment-row";
+import type { PaymentMethod } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     search?: string;
     method?: string;
     status?: string;
     dateFrom?: string;
     dateTo?: string;
     page?: string;
-  };
+  }>;
 }
 
 const PAGE_SIZE = 25;
@@ -24,15 +25,16 @@ const PAGE_SIZE = 25;
 export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
   const user = await getSessionUser();
   if (!user || user.role !== Role.STAFF) redirect("/");
-
-  const page = Number(searchParams.page ?? "1") || 1;
+  
+  const params = await searchParams; 
+  const page = Number(params.page ?? "1") || 1;
 
   const { items, total } = await listPayments({
-    search: searchParams.search,
-    method: searchParams.method as any,
-    status: searchParams.status as "COMPLETED" | "FAILED" | "REVERSED" | undefined,
-    dateFrom: searchParams.dateFrom ? new Date(searchParams.dateFrom) : undefined,
-    dateTo: searchParams.dateTo ? new Date(searchParams.dateTo) : undefined,
+    search: params.search,
+    method: params.method as any,
+    status: params.status as "COMPLETED" | "FAILED" | "REVERSED" | undefined,
+    dateFrom: params.dateFrom ? new Date(params.dateFrom) : undefined,
+    dateTo: params.dateTo ? new Date(params.dateTo) : undefined,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -49,7 +51,7 @@ export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <PaymentFilters selected={searchParams} />
+      <PaymentFilters selected={params} />
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">No payments match these filters.</p>
@@ -110,7 +112,7 @@ export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
         </div>
       )}
 
-      {totalPages > 1 && (
+       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
             Page {page} of {totalPages} ({total} total)
@@ -118,7 +120,7 @@ export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`/payments?${new URLSearchParams({ ...searchParams, page: String(page - 1) }).toString()}`}
+                href={`/payments?${new URLSearchParams({ ...params, page: String(page - 1) }).toString()}`}
                 className="rounded-md border px-3 py-1 hover:bg-accent"
               >
                 Previous
@@ -126,7 +128,7 @@ export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
             )}
             {page < totalPages && (
               <Link
-                href={`/payments?${new URLSearchParams({ ...searchParams, page: String(page + 1) }).toString()}`}
+                href={`/payments?${new URLSearchParams({ ...params, page: String(page + 1) }).toString()}`}
                 className="rounded-md border px-3 py-1 hover:bg-accent"
               >
                 Next

@@ -62,7 +62,7 @@ export default async function CourseDetailPage({ params }: PageProps) {
                 {course.programme.code} — {course.programme.name}
               </Link>
               <span>·</span>
-              <span>{course.credits} credit{course.credits !== 1 ? "s" : ""}</span>
+              <span>{course.creditHours} credit{course.creditHours !== 1 ? "s" : ""}</span>
             </div>
           </div>
         </div>
@@ -119,13 +119,13 @@ export default async function CourseDetailPage({ params }: PageProps) {
                   return (
                     <tr key={o.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
                       <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
-                        {o.academicYear.label}
+                        {o.academicYear.name}
                       </td>
                       <td className="px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300">
                         {SEMESTER_LABELS[o.semester] ?? o.semester}
                       </td>
                       <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                        {o.instructor.name}
+                        {o.instructor?.firstName} {o.instructor?.lastName}
                       </td>
                       <td className="px-4 py-3">
                         <span

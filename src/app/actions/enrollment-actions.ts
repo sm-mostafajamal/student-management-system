@@ -28,7 +28,7 @@ export async function enrollStudentAction(
   }
 
   try {
-    // Business rules (capacity, duplicate enrolment, WITHDRAWN/SUSPENDED student
+    // Business rules (capacity, duplicate enrollment, WITHDRAWN/SUSPENDED student
     // status) all live in enrollStudent() itself — we don't re-check any of it here.
     const enrollment = await enrollStudent(
       { studentId: parsed.data.studentId, courseOfferingId: parsed.data.courseOfferingId },
@@ -41,7 +41,7 @@ export async function enrollStudentAction(
       // Surfaces the service's own message verbatim, e.g.:
       // "This course offering is at full capacity."
       // "Student is already enrolled in this course offering."
-      // "Cannot enrol a WITHDRAWN student."
+      // "Cannot enroll a WITHDRAWN student."
       return { success: false, error: err.message };
     }
     console.error("enrollStudentAction failed", err);

@@ -24,7 +24,7 @@ export default async function ProgrammeDetailPage({ params }: PageProps) {
 
   if (!programme) notFound();
 
-  const activeStudents = programme._count.enrollments;
+  const activeStudents = programme._count.students;
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -61,7 +61,7 @@ export default async function ProgrammeDetailPage({ params }: PageProps) {
 
         {activeStudents > 0 && !programme.isActive && (
           <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-300">
-            Note: This programme is inactive but has {activeStudents} active enrolment(s).
+            Note: This programme is inactive but has {activeStudents} active enrollment(s).
           </div>
         )}
       </div>

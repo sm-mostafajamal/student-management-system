@@ -338,7 +338,7 @@ model FeeStructure {
 /// The actual invoice line billed to ONE student. amountDue is a SNAPSHOT
 /// taken at creation time — it does not follow FeeStructure if the
 /// structure changes later. This is the direct fix for "programme fee
-/// change after enrolment."
+/// change after enrollment."
 ///
 /// amountPaid is deliberately NOT stored here (see README edge case #2) —
 /// balance is always computed as: amountDue - waivedAmount - SUM(payments).

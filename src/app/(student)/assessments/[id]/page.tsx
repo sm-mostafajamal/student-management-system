@@ -5,6 +5,7 @@ import { getCurrentSubmission } from "@/services/submission.service";
 import { SubmissionForm } from "@/components/submissions/SubmissionForm";
 import { LateBadge } from "@/components/submissions/LateBadge";
 import { Role } from "@/types";
+import Link from "next/link";
 
 export default async function StudentAssessmentPage({
   params,
@@ -56,12 +57,12 @@ export default async function StudentAssessmentPage({
           <p className="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">
             {submission.originalFileName}
           </p>
-          <a
+          <Link
             href={`/api/submissions/${submission.id}/file`}
             className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
           >
             Download my file
-          </a>
+          </Link>
         </div>
       )}
 

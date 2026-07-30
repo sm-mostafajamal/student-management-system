@@ -128,22 +128,22 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
                         {o.course.code}
                       </Link>
                       <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
-                        {o.course.name}
+                        {o.course.title}
                       </p>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                        {o.course.programme.code}
+                        {o.course.programme?.code ?? 'General / Cross-programme'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {o.academicYear.label}
+                      {o.academicYear.name}
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
                       {SEMESTER_LABELS[o.semester] ?? o.semester}
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {o.instructor.name}
+                      {o.instructor.firstName} {o.instructor.lastName}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -159,7 +159,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge active={o.isActive} />
+                      <StatusBadge active={o.course.isActive} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link

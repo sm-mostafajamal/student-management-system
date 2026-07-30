@@ -6,12 +6,11 @@ import { dropEnrollmentAction } from "@/app/actions/enrollment-actions";
 
 interface RosterEnrollment {
   id: string;
-  status: string; // EnrollmentStatus, e.g. "ENROLLED"
+  status: string;
   student: {
     id: string;
-    fullName: string;
-    email: string;
-    status: string; // StudentStatus, e.g. "ENROLLED" | "WITHDRAWN" | "SUSPENDED"
+    status: string;
+    user: { firstName: string; lastName: string; email: string };
   };
 }
 
@@ -42,8 +41,8 @@ function DropRow({
     <>
       <tr className="border-t">
         <td className="p-3">
-          <div className="font-medium">{enrollment.student.fullName}</div>
-          <div className="text-xs text-muted-foreground">{enrollment.student.email}</div>
+          <div className="font-medium">{enrollment.student.user.firstName} {enrollment.student.user.lastName}</div>
+          <div className="text-xs text-muted-foreground">{enrollment.student.user.email}</div>
         </td>
         <td className="p-3 text-sm">{enrollment.status}</td>
         <td className="p-3 text-right">

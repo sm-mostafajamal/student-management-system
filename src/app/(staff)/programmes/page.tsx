@@ -120,7 +120,7 @@ export default async function ProgrammesPage({ searchParams }: PageProps) {
                     {prog._count.courses}
                   </td>
                   <td className="px-4 py-3 text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
-                    {prog._count.enrollments}
+                    {prog._count.students}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge active={prog.isActive} />

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps) {
   const o = await getOfferingById(id);
   if (!o) return { title: "Offering not found" };
   return {
-    title: `${o.course.code} ${o.academicYear.label} ${SEMESTER_LABELS[o.semester]} — Offerings`,
+    title: `${o.course.code} ${o.academicYear.name} ${SEMESTER_LABELS[o.semester]} — Offerings`,
   };
 }
 
@@ -35,17 +35,17 @@ export default async function OfferingDetailPage({ params }: PageProps) {
     getOfferingById(id),
     listAcademicYears(),
     prisma.user.findMany({
-      where: { role: { in: ["STAFF", "ADMIN"] } },
-      select: { id: true, name: true, email: true },
-      orderBy: { name: "asc" },
+      where: { role: { in: ["STAFF"] } },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: { id: "asc" },
     }),
   ]);
 
   if (!offering) notFound();
 
   const enrollmentPct =
-    offering.capacity > 0
-      ? Math.round((offering._count.enrollments / offering.capacity) * 100)
+    offering?.capacity != null && offering?.capacity > 0
+      ? Math.round((offering._count.enrollments / offering?.capacity) * 100)
       : 0;
 
   return (
@@ -62,9 +62,9 @@ export default async function OfferingDetailPage({ params }: PageProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                {offering.course.name}
+                {offering.course.title}
               </h1>
-              <StatusBadge active={offering.isActive} />
+              <StatusBadge active={offering.course.isActive} />
             </div>
             <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
               <Link
@@ -74,15 +74,15 @@ export default async function OfferingDetailPage({ params }: PageProps) {
                 {offering.course.code}
               </Link>
               {" · "}
-              {offering.academicYear.label}
+              {offering.academicYear.name}
               {" · "}
               {SEMESTER_LABELS[offering.semester] ?? offering.semester}
               {" · "}
               <Link
-                href={`/programmes/${offering.course.programme.id}`}
+                href={`/programmes/${offering.course.programme?.id}`}
                 className="text-indigo-600 hover:underline dark:text-indigo-400"
               >
-                {offering.course.programme.code}
+                {offering?.course?.programme?.code}
               </Link>
             </p>
           </div>

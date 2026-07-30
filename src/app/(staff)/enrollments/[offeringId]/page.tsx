@@ -29,7 +29,7 @@ export default async function OfferingEnrollmentsPage({ params }: PageProps) {
       </div>
 
       <section className="rounded-md border p-4">
-        <h2 className="mb-3 text-lg font-medium">Enrol a student</h2>
+        <h2 className="mb-3 text-lg font-medium">Enroll a student</h2>
         <EnrollStudentForm courseOfferingId={offering.id} atCapacity={atCapacity} />
       </section>
 

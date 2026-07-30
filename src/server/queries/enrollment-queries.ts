@@ -1,9 +1,9 @@
 import "server-only";
-import { db } from "@/lib/db"; // ASSUMPTION: shared PrismaClient instance lives here
+import { prisma } from "@/lib/prisma";
 
 export async function listOpenCourseOfferings() {
-  return db.courseOffering.findMany({
-    where: { status: "OPEN" }, // ASSUMPTION: adjust field/enum to your schema
+  return prisma.courseOffering.findMany({
+    where: { deletedAt: null },
     include: {
       course: { select: { code: true, title: true } },
       _count: { select: { enrollments: true } },
@@ -15,14 +15,20 @@ export async function listOpenCourseOfferings() {
 export type OfferingRoster = NonNullable<Awaited<ReturnType<typeof getOfferingRoster>>>;
 
 export async function getOfferingRoster(courseOfferingId: string) {
-  return db.courseOffering.findUnique({
+  return prisma.courseOffering.findUnique({
     where: { id: courseOfferingId },
     include: {
       course: { select: { code: true, title: true } },
       enrollments: {
-        where: { status: { not: "DROPPED" } }, // ASSUMPTION: EnrollmentStatus enum
+        where: { status: { not: "DROPPED" } },
         include: {
-          student: { select: { id: true, fullName: true, email: true, status: true } },
+          student: {
+            select: {
+              id: true,
+              status: true,
+              user: { select: { firstName: true, lastName: true, email: true } },
+            },
+          },
         },
         orderBy: { createdAt: "asc" },
       },

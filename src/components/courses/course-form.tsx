@@ -111,7 +111,7 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
             required
             min={1}
             max={12}
-            defaultValue={course?.credits ?? 3}
+            defaultValue={course?.creditHours ?? 3}
             className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           />
           <FieldError message={fieldError("credits")} />
@@ -132,7 +132,7 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           name="name"
           type="text"
           required
-          defaultValue={course?.name}
+          defaultValue={course?.title}
           placeholder="e.g. Introduction to Programming"
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
         />
@@ -152,7 +152,7 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           id="description"
           name="description"
           rows={3}
-          defaultValue={course?.description ?? ""}
+          defaultValue={course?.title ?? ""}
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
         />
       </div>
@@ -175,4 +175,4 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
       </div>
     </form>
   );
-}ww
+}

@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/db"; // ASSUMPTION: shared PrismaClient export
+import { prisma } from "@/lib/prisma";
 import type { AssessmentType } from "@/types";
 
 export type AssessmentStatusFilter = "all" | "open" | "closed" | "late_pending";
@@ -29,7 +29,7 @@ export interface AssessmentListRow {
 export async function listAssessments(
   filters: AssessmentListFilters
 ): Promise<AssessmentListRow[]> {
-  const assessments = await db.assessment.findMany({
+  const assessments = await prisma.assessment.findMany({
     where: {
       deletedAt: null,
       courseOffering: {
@@ -87,7 +87,7 @@ export async function listAssessments(
 }
 
 export async function listCourseFilterOptions() {
-  return db.course.findMany({
+  return prisma.course.findMany({
     where: { deletedAt: null },
     select: { id: true, code: true, title: true },
     orderBy: { code: "asc" },
@@ -95,7 +95,7 @@ export async function listCourseFilterOptions() {
 }
 
 export async function listProgrammeFilterOptions() {
-  return db.programme.findMany({
+  return prisma.programme.findMany({
     where: { deletedAt: null },
     select: { id: true, code: true, name: true },
     orderBy: { code: "asc" },

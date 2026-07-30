@@ -1,9 +1,9 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { EnrollmentStatus } from "@/types";
 
 export async function listCurrentEnrollmentsForStudent(studentId: string) {
-  return db.enrollment.findMany({
+  return prisma.enrollment.findMany({
     where: { studentId, status: EnrollmentStatus.ENROLLED },
     include: {
       courseOffering: {

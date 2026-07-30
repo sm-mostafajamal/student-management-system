@@ -16,13 +16,10 @@ export const DEFAULT_ROLE: Role = Role.STAFF;
 export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get(USER_COOKIE);
-
   if (!userCookie?.value) return null;
 
   try {
     const parsed = JSON.parse(userCookie.value) as SessionUser;
-    // Validate the role field is a known enum value — guards against cookie
-    // tampering with an unexpected string.
     if (!Object.values(Role).includes(parsed.role)) return null;
     return parsed;
   } catch {

@@ -22,9 +22,9 @@ export default async function NewOfferingPage({ searchParams }: PageProps) {
     // Only surface STAFF/ADMIN users as selectable instructors — defensive UI
     // (the service validates again server-side, but we don't pollute the dropdown)
     prisma.user.findMany({
-      where: { role: { in: ["STAFF", "ADMIN"] } },
-      select: { id: true, name: true, email: true },
-      orderBy: { name: "asc" },
+      where: { role: { in: ["STAFF"] } },
+      select: { id: true, firstName: true, lastName:true, email: true },
+      orderBy: { id: "asc" },
     }),
   ]);
 

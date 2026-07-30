@@ -32,7 +32,7 @@ export default async function StudentsPage({ searchParams }: PageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Students</h1>
-          <p className="text-sm text-muted-foreground">Manage student enrolment records.</p>
+          <p className="text-sm text-muted-foreground">Manage student enrollment records.</p>
         </div>
         <Link href="/students/new">
           <Button>

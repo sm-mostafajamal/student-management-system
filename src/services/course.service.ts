@@ -34,7 +34,7 @@ export async function getCourseById(id: string) {
         orderBy: [{ academicYear: { startDate: "desc" } }, { semester: "asc" }],
         include: {
           academicYear: true,
-          instructor: { select: { id: true, name: true, email: true } },
+          instructor: { select: { id: true, firstName: true, lastName: true, email: true } },
           _count: { select: { enrollments: true } },
         },
       },
@@ -152,7 +152,7 @@ export async function getOfferingById(id: string) {
         include: { programme: { select: { id: true, code: true, name: true } } },
       },
       academicYear: true,
-      instructor: { select: { id: true, name: true, email: true, role: true } },
+      instructor: { select: { id: true, firstName: true, lastName: true, email: true } },
       _count: { select: { enrollments: true } },
     },
   });
@@ -184,12 +184,12 @@ export async function listOfferings(opts?: {
           select: {
             id: true,
             code: true,
-            name: true,
+            title: true,
             programme: { select: { code: true, name: true } },
           },
         },
-        academicYear: { select: { id: true, label: true } },
-        instructor: { select: { id: true, name: true, email: true } },
+        academicYear: { select: { id: true, name: true } },
+        instructor: { select: { id: true, firstName: true, lastName: true, email: true } },
         _count: { select: { enrollments: true } },
       },
     }),
@@ -203,14 +203,14 @@ export async function createOffering(input: CreateOfferingInput) {
   // Edge-case 1: Instructor must be STAFF or ADMIN, never a student
   const instructor = await prisma.user.findUnique({
     where: { id: input.instructorId },
-    select: { id: true, name: true, role: true },
+    select: { id: true, firstName: true, lastName: true, role: true },
   });
   if (!instructor) {
     throw new ServiceError("Instructor not found.", "NOT_FOUND", "instructorId");
   }
   if (instructor.role === "STUDENT") {
     throw new ServiceError(
-      `"${instructor.name}" is a student, not a staff member. Only STAFF or ADMIN users can be assigned as instructors.`,
+      `"${instructor.firstName} ${instructor.lastName}" is a student, not a staff member. Only STAFF or ADMIN users can be assigned as instructors.`,
       "VALIDATION",
       "instructorId"
     );
@@ -256,14 +256,14 @@ export async function updateOffering(input: UpdateOfferingInput) {
   // Validate instructor role
   const instructor = await prisma.user.findUnique({
     where: { id: instructorId },
-    select: { id: true, name: true, role: true },
+    select: { id: true, firstName: true, lastName: true, role: true },
   });
   if (!instructor) {
     throw new ServiceError("Instructor not found.", "NOT_FOUND", "instructorId");
   }
   if (instructor.role === "STUDENT") {
     throw new ServiceError(
-      `"${instructor.name}" is a student, not a staff member.`,
+      `"${instructor.firstName} ${instructor.lastName}" is a student, not a staff member.`,
       "VALIDATION",
       "instructorId"
     );

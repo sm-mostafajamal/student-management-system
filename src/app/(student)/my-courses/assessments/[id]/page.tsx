@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { Role } from "@/types";
@@ -7,14 +8,15 @@ import { SubmissionForm } from "./submission-form";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function StudentAssessmentPage({ params }: PageProps) {
   const user = await getSessionUser();
   if (!user || user.role !== Role.STUDENT || !user.studentId) redirect("/");
 
-  const result = await getAssessmentForStudent(params.id, user.studentId);
+  const { id } = await params;
+  const result = await getAssessmentForStudent(id, user.studentId);
   if (!result) notFound();
 
   const { assessment, submission } = result;
@@ -75,12 +77,12 @@ export default async function StudentAssessmentPage({ params }: PageProps) {
             <div className="flex justify-between">
               <dt className="text-muted-foreground">File</dt>
               <dd>
-                
+                <Link
                   href={`/api/submissions/${submission.id}/file`}
                   className="font-medium hover:underline"
                 >
                   {submission.originalFileName ?? "Download"}
-                </a>
+                </Link>
               </dd>
             </div>
             <div className="flex justify-between">

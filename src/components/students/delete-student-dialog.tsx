@@ -43,7 +43,7 @@ export function DeleteStudentDialog({ studentId, studentName }: { studentId: str
         <DialogHeader>
           <DialogTitle>Remove student record?</DialogTitle>
           <DialogDescription>
-            This soft-deletes <strong>{studentName}</strong>. Their academic, financial, and enrolment history is
+            This soft-deletes <strong>{studentName}</strong>. Their academic, financial, and enrollment history is
             preserved and can be restored by an administrator — it is not permanently erased.
           </DialogDescription>
         </DialogHeader>

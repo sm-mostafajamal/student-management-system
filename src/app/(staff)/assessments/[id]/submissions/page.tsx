@@ -4,6 +4,7 @@ import { getAssessmentOr404 } from "@/services/assessment.service";
 import { listSubmissionsForAssessment } from "@/services/submission.service";
 import { LateBadge } from "@/components/submissions/LateBadge";
 import { Role } from "@/types";
+import Link from "next/link";
 
 export default async function AssessmentSubmissionsPage({
   params,
@@ -70,12 +71,12 @@ export default async function AssessmentSubmissionsPage({
                   <LateBadge isLate={s.isLate} />
                 </td>
                 <td className="px-4 py-2">
-                  <a
+                  <Link
                     href={`/api/submissions/${s.id}/file`}
                     className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
                   >
                     Download
-                  </a>
+                  </Link>
                 </td>
               </tr>
             ))}

@@ -22,7 +22,7 @@ export default async function NewProgrammePage() {
           New Programme
         </h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Programmes group related courses and are the unit students enrol into.
+          Programmes group related courses and are the unit students enroll into.
         </p>
       </div>
 

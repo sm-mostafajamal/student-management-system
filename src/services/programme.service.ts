@@ -50,7 +50,7 @@ export async function getProgrammeById(id: string) {
         },
       },
       _count: {
-        select: { enrollments: { where: { status: "ENROLLED" } } },
+        select: { students: { where: { status: "ENROLLED" } } },
       },
     },
   });
@@ -85,7 +85,7 @@ export async function listProgrammes(opts?: {
         _count: {
           select: {
             courses: true,
-            enrollments: { where: { status: "ENROLLED" } },
+            students: { where: { status: "ENROLLED" } },
           },
         },
       },
@@ -121,7 +121,7 @@ export async function updateProgramme(input: UpdateProgrammeInput) {
 
   // Edge-case guard: prevent deactivating if students are actively enrolled
   if (isActive === false) {
-    const activeEnrolments = await prisma.enrollment.count({
+    const activeEnrolments = await prisma.student.count({
       where: { programme: { id }, status: "ENROLLED" },
     });
     if (activeEnrolments > 0) {

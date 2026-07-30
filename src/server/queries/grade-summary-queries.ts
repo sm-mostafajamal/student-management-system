@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import type { Semester } from "@/types";
 
 export interface CourseOfferingGradeSummary {
@@ -18,7 +18,7 @@ export interface CourseOfferingGradeSummary {
 export async function listCourseOfferingGradeSummaries(): Promise<
   CourseOfferingGradeSummary[]
 > {
-  const offerings = await db.courseOffering.findMany({
+  const offerings = await prisma.courseOffering.findMany({
     where: { deletedAt: null },
     include: {
       course: true,

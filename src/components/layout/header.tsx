@@ -5,10 +5,10 @@
  * Contains: page title area (injected by children via a title prop),
  * theme toggle, and a notification bell placeholder.
  */
-
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Bell } from "lucide-react";
 import { useSession } from "@/components/shared/session-provider";
+import { UserSwitcher } from "./user-switcher"; 
 
 interface HeaderProps {
   title?: string;
@@ -53,12 +53,9 @@ export function Header({ title, description }: HeaderProps) {
         </button>
 
         <ThemeToggle />
-
+        <UserSwitcher />
         {user && (
-          <div className="
-            ml-2 flex items-center gap-2 rounded-md border border-border
-            bg-muted/40 px-3 py-1.5
-          ">
+          <div className="ml-2 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5">
             <span className="text-xs font-medium text-foreground">
               {user.firstName}
             </span>

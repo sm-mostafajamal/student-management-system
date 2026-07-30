@@ -136,13 +136,17 @@ export default async function CoursesPage({ searchParams }: PageProps) {
                     {course.name}
                   </td>
                   <td className="px-4 py-3">
+                  {course.programme ? (
                     <Link
                       href={`/programmes/${course.programme.id}`}
                       className="font-mono text-xs text-indigo-600 hover:underline dark:text-indigo-400"
                     >
                       {course.programme.code}
                     </Link>
-                  </td>
+                  ) : (
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">General / Cross-programme</span>
+                  )}
+                </td>
                   <td className="px-4 py-3 text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
                     {course.credits}
                   </td>

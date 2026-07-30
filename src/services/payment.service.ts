@@ -1,8 +1,120 @@
-// ─────────────────────────────────────────────
-// ADDED FOR /payments STAFF LEDGER — read-only, no business logic.
-// Matches this file's existing conventions: throws plain/custom Errors,
-// returns raw shapes (no ApiResult wrapper) — NOT fee.service.ts's style.
-// ─────────────────────────────────────────────
+/**
+ * Payment-facing service — record/reverse individual payments, plus the
+ * read-only ledger query for /payments (staff).
+ *
+ * Convention: throws plain/custom Errors, returns raw Prisma shapes
+ * (no ApiResult wrapper) — this is deliberately NOT fee.service.ts's style,
+ * because payment.actions.ts (Server Actions) does its own try/catch and
+ * maps these error types to user-facing messages itself.
+ *
+ * Reuses fee.service.ts's syncFeeStatus() for balance/status recompute after
+ * both recording and reversing a payment, so there's one source of truth for
+ * "what status should this Fee be in" instead of two competing calculations.
+ */
+import { Prisma, PaymentMethod, PaymentStatus } from "@prisma/client";
+
+import prisma from "@/lib/prisma";
+import { fromNumber, toNumberRequired } from "@/lib/decimal";
+import { syncFeeStatus } from "@/services/fee.service";
+import type { RecordPaymentInput } from "@/lib/validations/fee.schema";
+
+// ─── Errors ─────────────────────────────────────────────────────────────
+
+export class FeeNotFoundError extends Error {
+  constructor(feeId: string) {
+    super(`Fee ${feeId} was not found.`);
+    this.name = "FeeNotFoundError";
+  }
+}
+
+export class DuplicatePaymentReferenceError extends Error {
+  constructor(reference: string) {
+    super(`Payment reference "${reference}" already exists.`);
+    this.name = "DuplicatePaymentReferenceError";
+  }
+}
+
+export class OverpaymentError extends Error {
+  constructor(public balance: number) {
+    super(`Payment amount exceeds the outstanding balance of ${balance.toFixed(2)}.`);
+    this.name = "OverpaymentError";
+  }
+}
+
+// ─── recordPayment ──────────────────────────────────────────────────────
+
+export async function recordPayment(
+  input: RecordPaymentInput & { recordedById: string }
+) {
+  const fee = await prisma.fee.findUnique({
+    where: { id: input.feeId },
+    include: { payments: { where: { status: PaymentStatus.COMPLETED } } },
+  });
+  if (!fee) throw new FeeNotFoundError(input.feeId);
+
+  const duplicate = await prisma.payment.findUnique({
+    where: { reference: input.reference },
+  });
+  if (duplicate) throw new DuplicatePaymentReferenceError(input.reference);
+
+  const totalPaid = fee.payments.reduce(
+    (sum, p) => sum + toNumberRequired(p.amount),
+    0
+  );
+  const balance = toNumberRequired(fee.amountDue) - toNumberRequired(fee.waivedAmount) - totalPaid;
+
+  if (input.amount > balance + 0.001) {
+    throw new OverpaymentError(balance);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.create({
+      data: {
+        feeId: input.feeId,
+        studentId: input.studentId,
+        reference: input.reference,
+        amount: fromNumber(input.amount),
+        method: input.method as PaymentMethod,
+        status: PaymentStatus.COMPLETED,
+        paidAt: input.paidAt ?? new Date(),
+        recordedById: input.recordedById,
+      },
+    });
+    await syncFeeStatus(input.feeId, tx);
+    return payment;
+  });
+}
+
+// ─── reversePayment ─────────────────────────────────────────────────────
+
+export async function reversePayment(
+  paymentId: string,
+  reversedById: string,
+  reversalReason: string
+) {
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new Error("Payment not found.");
+  if (payment.status === PaymentStatus.REVERSED) {
+    throw new Error("This payment has already been reversed.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const reversed = await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: PaymentStatus.REVERSED,
+        reversedById,
+        reversedAt: new Date(),
+        reversalReason,
+      },
+    });
+    // Recompute the Fee's balance/status now that this payment no longer counts
+    // (syncFeeStatus only sums status=COMPLETED payments, so excluding this one
+    // is automatic).
+    await syncFeeStatus(payment.feeId, tx);
+    return reversed;
+  });
+}
 
 export interface ListPaymentsFilters {
   studentId?: string;
@@ -10,7 +122,6 @@ export interface ListPaymentsFilters {
   status?: "COMPLETED" | "FAILED" | "REVERSED";
   dateFrom?: Date;
   dateTo?: Date;
-  /** Matches student name or studentNumber, case-insensitive. */
   search?: string;
   page?: number;
   pageSize?: number;
