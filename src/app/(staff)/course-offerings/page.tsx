@@ -73,7 +73,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
           <option value="">All academic years</option>
           {academicYears.map((y) => (
             <option key={y.id} value={y.id}>
-              {y.label}
+              {y.name}
             </option>
           ))}
         </select>
@@ -159,7 +159,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge active={o.course.isActive} />
+                      <StatusBadge active={o.deletedAt == null} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link

@@ -35,12 +35,13 @@ export function OfferingForm({
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
-  const [isActive, setIsActive] = useState(offering?.isActive ?? true);
+  const [isActive, setIsActive] = useState(offering?.course?.isActive ?? true);
 
   useEffect(() => {
     if (state?.success) {
       const id = (state as { success: true; data: { id: string } }).data?.id ?? offering?.id;
       router.push(id ? `/course-offerings/${id}` : "/course-offerings");
+      router.refresh();
     }
   }, [state, offering?.id, router]);
 
