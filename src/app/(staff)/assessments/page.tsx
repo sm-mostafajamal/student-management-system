@@ -20,29 +20,24 @@ const VALID_STATUSES: AssessmentStatusFilter[] = [
   "late_pending",
 ];
 
-export default async function AssessmentsIndexPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    courseId?: string;
-    programmeId?: string;
-    status?: string;
-  }>;
-}) {
-  const params = await searchParams;
+interface PageProps {
+  searchParams: { courseId?: string; programmeId?: string; status?: string };
+}
+
+export default async function AssessmentsIndexPage({ searchParams }: PageProps) {
   const user = await getSessionUser();
   if (!user || user.role !== Role.STAFF) redirect("/");
 
   const status: AssessmentStatusFilter = VALID_STATUSES.includes(
-    params.status as AssessmentStatusFilter
+    searchParams.status as AssessmentStatusFilter
   )
-    ? (params.status as AssessmentStatusFilter)
+    ? (searchParams.status as AssessmentStatusFilter)
     : "all";
 
   const [assessments, courses, programmes] = await Promise.all([
     listAssessments({
-      courseId: params.courseId,
-      programmeId: params.programmeId,
+      courseId: searchParams.courseId,
+      programmeId: searchParams.programmeId,
       status,
     }),
     listCourseFilterOptions(),
@@ -67,20 +62,16 @@ export default async function AssessmentsIndexPage({
             </Link>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Create an assessment (title, type, deadline) for this offering, or
-            view all assessments and marksheets on the{" "}
-            <Link
-              href="/assessments"
-              className="text-indigo-600 hover:underline dark:text-indigo-400"
-            >
+            Create an assessment (title, type, deadline) for this offering, or view all
+            assessments and marksheets on the{" "}
+            <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
               Assessments
-            </Link>
+            </Link>{" "}
             page.
           </p>
         </section>
         <p className="text-sm text-muted-foreground">
-          All assessments across course offerings. Open a row to view its
-          marksheet or submissions.
+          All assessments across course offerings. Open a row to view its marksheet or submissions.
         </p>
       </div>
 
@@ -88,16 +79,14 @@ export default async function AssessmentsIndexPage({
         courses={courses}
         programmes={programmes}
         selected={{
-          courseId: params.courseId,
-          programmeId: params.programmeId,
+          courseId: searchParams.courseId,
+          programmeId: searchParams.programmeId,
           status,
         }}
       />
 
       {assessments.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No assessments match these filters.
-        </p>
+        <p className="text-sm text-muted-foreground">No assessments match these filters.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-left text-sm">
@@ -146,6 +135,7 @@ export default async function AssessmentsIndexPage({
                   <td className="p-3">{a.submissionCount}</td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-3">
+                      {/* See assumptions section: [id] here is courseOfferingId — verify against your marksheet route */}
                       <Link
                         href={`/assessments/${a.courseOfferingId}/marksheet`}
                         className="text-sm font-medium hover:underline"
