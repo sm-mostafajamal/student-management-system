@@ -30,7 +30,8 @@ export type ErrorCode =
   | "UNAUTHORIZED"
   | "PAYMENT_DUPLICATE"
   | "ENROLLMENT_CAPACITY"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "DUPLICATE_EMAIL";
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
   NOT_FOUND: 404,
@@ -41,6 +42,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   PAYMENT_DUPLICATE: 409,
   ENROLLMENT_CAPACITY: 409,
   INTERNAL_ERROR: 500,
+  DUPLICATE_EMAIL : 409
 };
 
 // ─── AppError ─────────────────────────────────────────────────────────────────

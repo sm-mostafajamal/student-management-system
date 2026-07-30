@@ -2,7 +2,7 @@
 // Components call these functions and never touch Prisma directly for
 // anything beyond a trivial read.
 
-import { Prisma } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import type { CreateStudentInput, UpdateStudentInput, StudentQueryInput } from "@/lib/validations/student.schema";
@@ -181,7 +181,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
               email,
               firstName: input.firstName.trim(),
               lastName: input.lastName.trim(),
-              role: "STUDENT",
+              role: Role.STUDENT,
             },
           },
         },

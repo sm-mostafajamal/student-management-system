@@ -35,20 +35,11 @@ const phoneSchema = z
   .optional()
   .or(z.literal(""));
 
-// Format enforced: PEN/<4-digit year>/<5-digit sequence>, e.g. "PEN/2025/00042"
-const studentNumberSchema = z
-  .string()
-  .trim()
-  .toUpperCase()
-  .regex(/^PEN\/\d{4}\/\d{5}$/, "Student number must match format PEN/YYYY/NNNNN");
-
 export const createStudentSchema = z
   .object({
     firstName: nameSchema,
     lastName: nameSchema,
     email: emailSchema,
-    userId: cuidSchema,
-    studentNumber: studentNumberSchema,
     programmeId: cuidSchema,
     admissionAcademicYearId: cuidSchema.optional(),
     status: z.nativeEnum(StudentStatus).default("ENROLLED"),

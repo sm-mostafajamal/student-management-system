@@ -54,6 +54,13 @@ export function StudentsFilters({ programmes }: { programmes: ProgrammeOption[] 
       </div>
 
       <Select
+        items={[
+          { value: "all", label: "All programmes" },
+          ...programmes.map((p) => ({
+            value: p.id,
+            label: `${p.code} — ${p.name}${!p.isActive ? " (inactive)" : ""}`,
+          })),
+        ]}
         value={searchParams.get("programmeId") ?? "all"}
         onValueChange={(v) => updateParam("programmeId", v === "all" ? null : v)}
       >
@@ -72,6 +79,13 @@ export function StudentsFilters({ programmes }: { programmes: ProgrammeOption[] 
       </Select>
 
       <Select
+        items={[
+          { value: "all", label: "All statuses" },
+          ...Object.values(StudentStatus).map((s) => ({
+            value: s,
+            label: s.charAt(0) + s.slice(1).toLowerCase(),
+          })),
+        ]}
         value={searchParams.get("status") ?? "all"}
         onValueChange={(v) => updateParam("status", v === "all" ? null : v)}
       >

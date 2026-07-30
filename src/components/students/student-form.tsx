@@ -150,6 +150,10 @@ export function StudentForm(props: Props) {
         <div className="flex flex-col gap-1.5">
           <Label>Gender</Label>
           <Select
+            items={Object.values(Gender).map((g) => ({
+              value: g,
+              label: g.charAt(0) + g.slice(1).toLowerCase(),
+            }))}
             defaultValue={isEdit ? props.student.gender ?? undefined : undefined}
             onValueChange={(v) => form.setValue("gender", v as Gender)}
           >
@@ -178,6 +182,12 @@ export function StudentForm(props: Props) {
         <div className="flex flex-col gap-1.5">
           <Label>Programme</Label>
           <Select
+            items={props.programmes
+              .filter((p) => p.isActive || (isEdit && p.id === props.student.programmeId))
+              .map((p) => ({
+                value: p.id,
+                label: `${p.code} — ${p.name}${!p.isActive ? " (inactive — cannot select)" : ""}`,
+              }))}
             defaultValue={isEdit ? props.student.programmeId : undefined}
             onValueChange={(v) => {
               form.setValue("programmeId", v);
@@ -208,7 +218,13 @@ export function StudentForm(props: Props) {
       {!isEdit && (
         <div className="flex flex-col gap-1.5">
           <Label>Admission academic year</Label>
-          <Select onValueChange={(v) => form.setValue("admissionAcademicYearId", v)}>
+          <Select
+            items={props.academicYears.map((y) => ({
+              value: y.id,
+              label: `${y.name}${y.isCurrent ? " (current)" : ""}`,
+            }))}
+            onValueChange={(v) => form.setValue("admissionAcademicYearId", v)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Defaults to current academic year" />
             </SelectTrigger>
@@ -228,6 +244,10 @@ export function StudentForm(props: Props) {
         <div className="flex flex-col gap-1.5">
           <Label>Status</Label>
           <Select
+            items={Object.values(StudentStatus).map((s) => ({
+              value: s,
+              label: s.charAt(0) + s.slice(1).toLowerCase(),
+            }))}
             defaultValue={props.student.status}
             onValueChange={(v) => form.setValue("status", v as StudentStatus)}
           >
