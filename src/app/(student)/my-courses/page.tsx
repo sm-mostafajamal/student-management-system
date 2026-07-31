@@ -32,7 +32,7 @@ export default async function MyCoursesPage() {
                   {e.courseOffering.course.code} — {e.courseOffering.course.title}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {e.courseOffering.semester.replace(/_/g, " ")} ·{" "}
+                  {e.courseOffering.semester.replace(/_/g, " ")} ·
                   {e.courseOffering.academicYear.name}
                   {e.courseOffering.instructor &&
                     ` · ${e.courseOffering.instructor.firstName} ${e.courseOffering.instructor.lastName}`}

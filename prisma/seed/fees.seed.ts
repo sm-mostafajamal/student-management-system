@@ -119,7 +119,6 @@ export async function seedFeesAndPayments(prisma: PrismaClient) {
           data: { status: "OVERDUE", dueDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
         });
       }
-      // remaining students: left as-is → PENDING, not yet paid
     }
   }
 

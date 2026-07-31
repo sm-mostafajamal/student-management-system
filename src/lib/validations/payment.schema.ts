@@ -27,14 +27,6 @@ export const createPaymentSchema = z.object({
 // surfaced to staff rather than a hard block — a schema-level refine can't
 // express "warn but allow."
 
-export const reversePaymentSchema = z.object({
-  reversedById: cuidSchema,
-  reversalReason: z
-    .string()
-    .trim()
-    .min(10, "Provide a substantive reversal reason for the audit trail")
-    .max(500),
-});
+
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
-export type ReversePaymentInput = z.infer<typeof reversePaymentSchema>;

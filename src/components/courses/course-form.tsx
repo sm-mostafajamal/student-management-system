@@ -15,18 +15,24 @@ interface CourseFormProps {
   defaultProgrammeId?: string;
 }
 
-const initialState: ActionResult | null = null;
+type CourseResult = ActionResult<{ id: string }>;
+
+const initialState: CourseResult | null = null;
 
 export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFormProps) {
   const isEdit = Boolean(course);
-  const action = isEdit ? updateCourseAction : createCourseAction;
+
+  const action: (
+    state: CourseResult | null,
+    formData: FormData
+  ) => Promise<CourseResult> = isEdit ? updateCourseAction : createCourseAction;
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
 
   useEffect(() => {
     if (state?.success) {
-      const id = (state as { success: true; data: { id: string } }).data?.id ?? course?.id;
+      const id = state.data?.id ?? course?.id;
       router.push(id ? `/courses/${id}` : "/courses");
     }
   }, [state, course?.id, router]);

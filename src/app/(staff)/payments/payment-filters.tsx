@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { PaymentMethod } from "@/types";
+import { Route } from "next";
 
 const STATUSES = ["COMPLETED", "FAILED", "REVERSED"] as const;
 
@@ -25,7 +26,7 @@ export function PaymentFilters({
     if (value) params.set(key, value);
     else params.delete(key);
     params.set("page", "1"); // any filter change resets pagination
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}` as Route);
   }
 
   return (

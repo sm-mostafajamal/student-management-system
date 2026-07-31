@@ -30,6 +30,7 @@ export const bulkAssignFeesSchema = z.object({
 // exceed the balance" check happens inside payment.service.ts, atomically,
 // because that check needs a DB round-trip Zod can't do.
 export const recordPaymentSchema = z.object({
+  studentId: cuidSchema,
   feeId: z.string().min(1),
   amount: z.coerce
     .number()
@@ -88,3 +89,4 @@ export const updateFeeStatusSchema = z.object({
 export type CreateFeeStructureInput = z.infer<typeof createFeeStructureSchema>;
 export type CreateFeeInput = z.infer<typeof createFeeSchema>;
 export type WaiveFeeInput = z.infer<typeof waiveFeeSchema>;
+export type ReversePaymentInput = z.infer<typeof reversePaymentSchema>;

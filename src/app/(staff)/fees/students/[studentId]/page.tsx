@@ -25,8 +25,13 @@ export default async function StudentFeesPage({ params }: { params: Promise<{ st
     orderBy: { createdAt: "desc" },
   });
 
-  const balances = await Promise.all(fees.map((f) => computeFeeBalance(f.id)));
-  const summary = await getStudentFinancialSummary(student.id);
+  const balanceResults = await Promise.all(fees.map((f) => computeFeeBalance(f.id)));
+  const balances = balanceResults.map((r) => {
+    if (!r.success) throw new Error(r.error);
+    return r.data;
+  });
+  const result = await getStudentFinancialSummary(student.id);
+  const summary = result.success && result.data;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
@@ -43,13 +48,18 @@ export default async function StudentFeesPage({ params }: { params: Promise<{ st
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SummaryCard label="Total billed" value={summary.totalOwed} />
-        <SummaryCard label="Total paid" value={summary.totalPaid} tone="positive" />
-        <SummaryCard
-          label="Outstanding balance"
-          value={summary.outstandingBalance}
-          tone={summary.hasOverdueFees ? "danger" : summary.outstandingBalance > 0 ? "warning" : "positive"}
-        />
+        {summary &&
+          <div>
+
+            <SummaryCard label="Total billed" value={summary.totalOwed} />
+            <SummaryCard label="Total paid" value={summary.totalPaid} tone="positive" />
+            <SummaryCard
+              label="Outstanding balance"
+              value={summary.outstandingBalance}
+              tone={summary.hasOverdueFees ? "danger" : summary.outstandingBalance > 0 ? "warning" : "positive"}
+            />
+          </div>
+        }
       </div>
 
       <div className="space-y-4">

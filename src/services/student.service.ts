@@ -34,7 +34,7 @@ async function resolveAdmissionYear(tx: Prisma.TransactionClient, admissionAcade
   if (admissionAcademicYearId) {
     const year = await tx.academicYear.findUnique({ where: { id: admissionAcademicYearId } });
     if (!year) {
-      throw new AppError("ACADEMIC_YEAR_INVALID", "Selected admission academic year does not exist.", {
+      throw new AppError("VALIDATION_ERROR", "Selected admission academic year does not exist.", {
         admissionAcademicYearId: ["Invalid academic year."],
       });
     }
@@ -44,7 +44,7 @@ async function resolveAdmissionYear(tx: Prisma.TransactionClient, admissionAcade
   const current = await tx.academicYear.findFirst({ where: { isCurrent: true } });
   if (!current) {
     throw new AppError(
-      "ACADEMIC_YEAR_INVALID",
+      "VALIDATION_ERROR",
       "No current academic year is configured. Ask an admin to set one, or select an admission year explicitly."
     );
   }
@@ -77,7 +77,7 @@ async function generateStudentNumber(tx: Prisma.TransactionClient, admissionYear
 
   if (next > 9999) {
     throw new AppError(
-      "STUDENT_ID_EXHAUSTED",
+      "FORBIDDEN",
       `Student ID sequence for ${admissionYear} is exhausted (9999 admissions reached).`
     );
   }
@@ -150,7 +150,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
   }
   if (!programme.isActive) {
     throw new AppError(
-      "PROGRAMME_INACTIVE",
+      "FORBIDDEN",
       `"${programme.name}" is no longer accepting students. Choose an active programme.`,
       { programmeId: ["This programme is inactive."] }
     );
@@ -221,7 +221,7 @@ export async function updateStudent(id: string, input: UpdateStudentInput): Prom
     // not just create.
     if (!targetProgramme.isActive) {
       throw new AppError(
-        "PROGRAMME_INACTIVE",
+        "FORBIDDEN",
         `"${targetProgramme.name}" is no longer active and cannot be assigned.`,
         { programmeId: ["This programme is inactive."] }
       );
@@ -237,7 +237,7 @@ export async function updateStudent(id: string, input: UpdateStudentInput): Prom
     const paymentCount = await prisma.payment.count({ where: { studentId: id } });
     if (paymentCount > 0 && !input.force) {
       throw new AppError(
-        "PROGRAMME_CHANGE_HAS_PAYMENTS",
+        "FORBIDDEN",
         `This student has ${paymentCount} recorded payment(s). Changing programme will not alter ` +
           `historical fees/payments (they are snapshotted), but future billing will follow the new ` +
           `programme's fee structure. Confirm to proceed.`

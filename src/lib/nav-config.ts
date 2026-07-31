@@ -1,8 +1,9 @@
 import { Role } from "@prisma/client";
+import { Route } from "next";
 
 export interface NavItem {
   label: string;
-  href: string;
+  href: Route;
   icon: string; // Lucide icon name — resolved dynamically in Sidebar
   roles: Role[]; // which roles can see this item
   badge?: "beta" | "new"; // optional callout

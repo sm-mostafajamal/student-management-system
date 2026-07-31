@@ -63,7 +63,7 @@ export default async function MyFeesPage() {
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">{fee.category.replace("_", " ")}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {fee.semester.replace("_", " ")} · Due{" "}
+                    {fee.semester.replace("_", " ")} · Due
                     {fee.dueDate ? new Date(fee.dueDate).toLocaleDateString() : "N/A"}
                   </p>
                 </div>

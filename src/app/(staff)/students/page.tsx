@@ -9,6 +9,7 @@ import { StudentsFilters } from "@/components/students/students-filters";
 import { StudentsTable } from "@/components/students/students-table";
 import { StudentsTableSkeleton } from "@/components/students/students-table-skeleton";
 import { getSessionUser } from "@/lib/session"; 
+import { redirect } from "next/navigation";
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }

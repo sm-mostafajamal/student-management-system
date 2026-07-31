@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Route } from "next";
 
 interface PaginationProps {
   page: number;
@@ -68,7 +69,7 @@ function PaginationLink({
   }
   return (
     <Link
-      href={href}
+      href={href as Route}
       aria-label={ariaLabel}
       className={cn(
         "inline-flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors",

@@ -42,6 +42,10 @@ export default async function OfferingDetailPage({ params }: PageProps) {
   ]);
 
   if (!offering) notFound();
+  const offeringForForm = {
+    ...offering,
+    enrolled: offering._count.enrollments,
+  };
 
   const enrollmentPct =
     offering?.capacity != null && offering?.capacity > 0
@@ -125,10 +129,10 @@ export default async function OfferingDetailPage({ params }: PageProps) {
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Create an assessment (title, type, deadline) for this offering, or view all
-          assessments and marksheets on the{" "}
+          assessments and marksheets on the
           <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
             Assessments
-          </Link>{" "}
+          </Link>
           page.
         </p>
       </section>
@@ -140,11 +144,11 @@ export default async function OfferingDetailPage({ params }: PageProps) {
         </h2>
         <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
           <OfferingForm
-            offering={offering}
+            offering={offeringForForm}
             courses={[offering.course]}
             academicYears={academicYears}
             instructors={instructors}
-            enrolledCount={offering._count.enrollments}
+            defaultCourseId={offering.course.id}
           />
         </div>
       </section>

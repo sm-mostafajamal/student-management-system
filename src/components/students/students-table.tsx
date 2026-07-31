@@ -9,6 +9,7 @@ import { StudentStatusBadge } from "./status-badge";
 import { StudentEmptyState } from "./student-empty-state";
 import { DeleteStudentDialog } from "./delete-student-dialog";
 import type { StudentWithProgramme, PaginatedResult } from "@/types";
+import { Route } from "next";
 
 export function StudentsTable({ result }: { result: PaginatedResult<StudentWithProgramme> }) {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function StudentsTable({ result }: { result: PaginatedResult<StudentWithP
   function goToPage(page: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}` as Route);
   }
 
   return (
@@ -60,11 +61,13 @@ export function StudentsTable({ result }: { result: PaginatedResult<StudentWithP
                 <StudentStatusBadge status={s.status} />
               </TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href={`/students/${s.id}/edit`}>
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">Edit {s.user.firstName}</span>
-                  </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  render={<Link href={`/students/${s.id}/edit`} />}
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Edit {s.user.firstName}</span>
                 </Button>
                 <DeleteStudentDialog studentId={s.id} studentName={`${s.user.firstName} ${s.user.lastName}`} />
               </TableCell>
@@ -75,7 +78,7 @@ export function StudentsTable({ result }: { result: PaginatedResult<StudentWithP
 
       <div className="flex items-center justify-between border-t p-3 text-sm text-muted-foreground">
         <span>
-          Showing {(result.page - 1) * result.pageSize + 1}–{Math.min(result.page * result.pageSize, result.total)} of{" "}
+          Showing {(result.page - 1) * result.pageSize + 1}–{Math.min(result.page * result.pageSize, result.total)} of
           {result.total}
         </span>
         <div className="flex gap-2">

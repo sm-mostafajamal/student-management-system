@@ -30,10 +30,13 @@ export async function enrollStudentAction(
   try {
     // Business rules (capacity, duplicate enrollment, WITHDRAWN/SUSPENDED student
     // status) all live in enrollStudent() itself — we don't re-check any of it here.
-    const enrollment = await enrollStudent(
+    const result = await enrollStudent(
       { studentId: parsed.data.studentId, courseOfferingId: parsed.data.courseOfferingId },
-      user
     );
+    if (!result.success) {
+      return result;
+    }
+    const enrollment = result.data;
     revalidatePath(`/enrollments/${parsed.data.courseOfferingId}`);
     return { success: true, data: { id: enrollment.id } };
   } catch (err) {
@@ -74,14 +77,13 @@ export async function dropEnrollmentAction(
   try {
     // dropEnrollment() itself enforces "no drop if grades/submissions exist" —
     // we just forward the request and surface whatever it throws.
-    const enrollment = await dropEnrollment(
-      {
-        enrollmentId: parsed.data.enrollmentId,
-        reason: parsed.data.reason,
-        expectedVersion: parsed.data.expectedVersion,
-      },
-      user
+    const result = await dropEnrollment(
+      parsed.data.enrollmentId
     );
+    if (!result.success) {
+      return result;
+    }
+    const enrollment = result.data;
     revalidatePath(`/enrollments/${parsed.data.courseOfferingId}`);
     return { success: true, data: { id: enrollment.id } };
   } catch (err) {

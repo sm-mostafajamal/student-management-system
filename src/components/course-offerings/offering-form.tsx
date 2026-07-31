@@ -13,15 +13,24 @@ const SEMESTER_LABELS: Record<string, string> = {
   SUMMER: "Summer",
 };
 
+// Matches what the parent page actually fetches: the offering's scalars,
+// plus the related course (for isActive) and a computed enrollment count.
+export type OfferingWithRelations = CourseOffering & {
+  course: Pick<Course, "isActive">;
+  enrolled: number;
+};
+
 interface OfferingFormProps {
-  offering?: CourseOffering;
-  courses: Pick<Course, "id" | "code" | "name">[];
-  academicYears: Pick<AcademicYear, "id" | "label">[];
-  instructors: Pick<User, "id" | "name" | "email">[];
+  offering?: OfferingWithRelations;
+  courses: Pick<Course, "id" | "code" | "title">[];
+  academicYears: Pick<AcademicYear, "id" | "name">[];
+  instructors: Pick<User, "id" | "firstName" | "lastName" | "email">[];
   defaultCourseId?: string;
 }
 
-const initialState: ActionResult | null = null;
+type OfferingResult = ActionResult<{ id: string }>;
+
+const initialState: OfferingResult | null = null;
 
 export function OfferingForm({
   offering,
@@ -31,15 +40,19 @@ export function OfferingForm({
   defaultCourseId,
 }: OfferingFormProps) {
   const isEdit = Boolean(offering);
-  const action = isEdit ? updateOfferingAction : createOfferingAction;
+
+  const action: (
+    state: OfferingResult | null,
+    formData: FormData
+  ) => Promise<OfferingResult> = isEdit ? updateOfferingAction : createOfferingAction;
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
-  const [isActive, setIsActive] = useState(offering?.course?.isActive ?? true);
+  const [isActive, setIsActive] = useState(offering?.course?.isActive ?? false);
 
   useEffect(() => {
     if (state?.success) {
-      const id = (state as { success: true; data: { id: string } }).data?.id ?? offering?.id;
+      const id = state.data?.id ?? offering?.id;
       router.push(id ? `/course-offerings/${id}` : "/course-offerings");
       router.refresh();
     }
@@ -173,7 +186,7 @@ export function OfferingForm({
           <option value="">Select instructor…</option>
           {instructors.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.name} ({i.email})
+              {i.firstName} {i.lastName} ({i.email})
             </option>
           ))}
         </select>

@@ -19,7 +19,7 @@ export type ActionResult<T = void> =
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 export async function createProgrammeAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
@@ -58,9 +58,9 @@ export async function createProgrammeAction(
 // ─── Update ───────────────────────────────────────────────────────────────────
 
 export async function updateProgrammeAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
 
   const raw = {
@@ -87,7 +87,7 @@ export async function updateProgrammeAction(
     await updateProgramme(parsed.data);
     revalidatePath("/programmes");
     revalidatePath(`/programmes/${parsed.data.id}`);
-    return { success: true, data: undefined };
+    return { success: true, data: { id: parsed.data.id } };
   } catch (err) {
     if (err instanceof ServiceError) {
       return { success: false, error: err.message, field: err.field };

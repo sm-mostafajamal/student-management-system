@@ -190,8 +190,8 @@ export function StudentForm(props: Props) {
               }))}
             defaultValue={isEdit ? props.student.programmeId : undefined}
             onValueChange={(v) => {
-              form.setValue("programmeId", v);
-              setNeedsProgrammeChangeConfirm(false); // reset confirm state on a fresh choice
+              form.setValue("programmeId", v ?? '');
+              setNeedsProgrammeChangeConfirm(false); 
               form.setValue("force", false as any);
             }}
           >
@@ -223,7 +223,7 @@ export function StudentForm(props: Props) {
               value: y.id,
               label: `${y.name}${y.isCurrent ? " (current)" : ""}`,
             }))}
-            onValueChange={(v) => form.setValue("admissionAcademicYearId", v)}
+            onValueChange={(v) => form.setValue("admissionAcademicYearId", v as string)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Defaults to current academic year" />

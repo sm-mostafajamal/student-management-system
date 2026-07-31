@@ -47,7 +47,7 @@ export function CreateAssessmentForm({
           </option>
           {courseOfferings.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.course.code} — {o.course.title} ({o.semester.replaceAll("_", " ")}{" "}
+              {o.course.code} — {o.course.title} ({o.semester.replaceAll("_", " ")}
               {o.academicYear.name})
             </option>
           ))}

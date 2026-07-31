@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import type { AssessmentStatusFilter } from "@/server/queries/assessment-queries";
+import { Route } from "next";
 
 interface CourseOption {
   id: string;
@@ -27,16 +28,22 @@ export function AssessmentFilters({
     status: AssessmentStatusFilter;
   };
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+const router = useRouter();
+const pathname = usePathname();
+const searchParams = useSearchParams();
 
-  function update(key: string, value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set(key, value);
-    else params.delete(key);
-    router.push(`${pathname}?${params.toString()}`);
+function update(key: string, value: string) {
+  const params = new URLSearchParams(searchParams.toString());
+
+  if (value) {
+    params.set(key, value);
+  } else {
+    params.delete(key);
   }
+
+  const url = `${pathname}?${params.toString()}` as Route;
+  router.push(url);
+}
 
   return (
     <div className="flex flex-wrap gap-3">

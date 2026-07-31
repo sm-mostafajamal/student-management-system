@@ -232,7 +232,7 @@ function DeactivateAssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button type="button" variant="destructive">
           Deactivate assessment
         </Button>

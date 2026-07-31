@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -187,7 +182,7 @@ model AcademicYear {
 
 model Programme {
   id             String         @id @default(cuid())
-  code           String         @unique // e.g. "BSC-CS"
+  code           String         @unique 
   name           String
   level          ProgrammeLevel
   durationYears  Int
@@ -261,7 +256,7 @@ model CourseOffering {
 model Student {
   id                     String        @id @default(cuid())
   userId                 String        @unique
-  studentNumber          String        @unique // e.g. "PEN/2025/00042"
+  studentNumber          String        @unique 
   programmeId            String
   admissionAcademicYearId String?      // intake cohort, nullable for legacy/manual entries
   status                 StudentStatus @default(ENROLLED)

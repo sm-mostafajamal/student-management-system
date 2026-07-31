@@ -17,18 +17,24 @@ interface ProgrammeFormProps {
   onSuccess?: (id: string) => void;
 }
 
-const initialState: ActionResult | null = null;
+type ProgrammeResult = ActionResult<{ id: string }>;
+
+const initialState: ProgrammeResult | null = null;
 
 export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
   const isEdit = Boolean(programme);
-  const action = isEdit ? updateProgrammeAction : createProgrammeAction;
+
+  const action: (
+    state: ProgrammeResult | null,
+    formData: FormData
+  ) => Promise<ProgrammeResult> = isEdit ? updateProgrammeAction : createProgrammeAction;
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
 
   useEffect(() => {
     if (state?.success) {
-      const id = (state as { success: true; data: { id: string } }).data?.id ?? programme?.id;
+      const id = state.data?.id ?? programme?.id;
       if (onSuccess && id) {
         onSuccess(id);
       } else {

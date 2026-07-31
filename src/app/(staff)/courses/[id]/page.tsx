@@ -56,10 +56,10 @@ export default async function CourseDetailPage({ params }: PageProps) {
               <span className="font-mono">{course.code}</span>
               <span>·</span>
               <Link
-                href={`/programmes/${course.programme.id}`}
+                href={`/programmes/${course?.programme?.id}`}
                 className="text-indigo-600 hover:underline dark:text-indigo-400"
               >
-                {course.programme.code} — {course.programme.name}
+                {course?.programme?.code} — {course?.programme?.name}
               </Link>
               <span>·</span>
               <span>{course.creditHours} credit{course.creditHours !== 1 ? "s" : ""}</span>
@@ -114,7 +114,8 @@ export default async function CourseDetailPage({ params }: PageProps) {
               </thead>
               <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800 dark:bg-zinc-950">
                 {course.offerings.map((o) => {
-                  const pct = o.capacity > 0 ? (o._count.enrollments / o.capacity) * 100 : 0;
+                  const capacity = o.capacity ?? 0;
+                  const pct = capacity > 0 ? (o._count.enrollments / capacity) * 100 : 0;
                   const isFull = pct >= 100;
                   return (
                     <tr key={o.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">

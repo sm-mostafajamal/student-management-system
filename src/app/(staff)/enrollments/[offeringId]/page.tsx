@@ -4,17 +4,18 @@ import { EnrollStudentForm } from "./enroll-student-form";
 import { RosterTable } from "./roster-table";
 
 interface PageProps {
-  params: { offeringId: string };
+  searchParams: Promise<{ offeringId: string }>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function OfferingEnrollmentsPage({ params }: PageProps) {
+export default async function OfferingEnrollmentsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const offering = await getOfferingRoster(params.offeringId);
   if (!offering) notFound();
 
   const seatsTaken = offering._count.enrollments;
-  const atCapacity = seatsTaken >= offering.capacity;
+  const atCapacity = seatsTaken >= (offering?.capacity ?? 0);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 p-6">

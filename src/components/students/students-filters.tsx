@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Search } from "lucide-react";
 import { StudentStatus } from "@/types";
+import { Route } from "next";
 
 interface ProgrammeOption {
   id: string;
@@ -27,7 +28,7 @@ export function StudentsFilters({ programmes }: { programmes: ProgrammeOption[] 
       if (value) params.set(key, value);
       else params.delete(key);
       params.delete("page"); // any filter change resets pagination
-      startTransition(() => router.replace(`${pathname}?${params.toString()}`));
+      startTransition(() => router.replace(`${pathname}?${params.toString()}` as Route));
     },
     [pathname, router, searchParams]
   );

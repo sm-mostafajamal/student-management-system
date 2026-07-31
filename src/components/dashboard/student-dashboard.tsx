@@ -203,8 +203,8 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
                         {e.courseOffering.course.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {e.courseOffering.course.code} ·{" "}
-                        {e.courseOffering.course.creditHours} cr ·{" "}
+                        {e.courseOffering.course.code} ·
+                        {e.courseOffering.course.creditHours} cr ·
                         {e.courseOffering.instructor
                           ? `${e.courseOffering.instructor.firstName} ${e.courseOffering.instructor.lastName}`
                           : "TBA"}
@@ -221,7 +221,7 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <h2 className="text-sm font-semibold text-foreground">Recent Grades</h2>
-              <Link href="/my-grades" className="text-xs text-primary hover:underline font-medium">
+              <Link href="/results" className="text-xs text-primary hover:underline font-medium">
                 View all →
               </Link>
             </div>
@@ -287,7 +287,7 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
                 {hasOverdueFees ? "Overdue fees" : "Outstanding balance"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                You have {formatCurrency(outstandingBalance)} outstanding.{" "}
+                You have {formatCurrency(outstandingBalance)} outstanding.
                 {hasOverdueFees ? "Some fees are past due." : ""}
               </p>
             </div>

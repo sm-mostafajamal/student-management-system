@@ -90,7 +90,6 @@ export async function upsertGrade(
         );
       }
 
-      // Update grade + write audit log atomically
       const updated = await prisma.$transaction(async (tx) => {
         await tx.gradeChangeLog.create({
           data: {
@@ -98,12 +97,14 @@ export async function upsertGrade(
             previousNumericScore: existing.numericScore,
             previousLetterGrade: existing.letterGrade,
             previousGpaPoints: existing.gpaPoints,
+            previousIsPublished: existing.isPublished, // = true, since this branch only runs when existing.isPublished is true
             newNumericScore:
               parsed.numericScore != null
                 ? fromNumber(parsed.numericScore)
                 : null,
             newLetterGrade: letterGrade ?? null,
             newGpaPoints: gpaPoints != null ? fromNumber(gpaPoints) : null,
+            newIsPublished: existing.isPublished, // unchanged — this function doesn't alter publish status
             reason: parsed.changeReason!,
             changedById: parsed.computedById,
           },

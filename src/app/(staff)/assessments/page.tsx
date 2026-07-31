@@ -21,23 +21,24 @@ const VALID_STATUSES: AssessmentStatusFilter[] = [
 ];
 
 interface PageProps {
-  searchParams: { courseId?: string; programmeId?: string; status?: string };
+  searchParams: Promise<{ courseId?: string; programmeId?: string; status?: string }>;
 }
 
 export default async function AssessmentsIndexPage({ searchParams }: PageProps) {
   const user = await getSessionUser();
   if (!user || user.role !== Role.STAFF) redirect("/");
-
+  const params = await searchParams;
+  
   const status: AssessmentStatusFilter = VALID_STATUSES.includes(
-    searchParams.status as AssessmentStatusFilter
+    params.status as AssessmentStatusFilter
   )
-    ? (searchParams.status as AssessmentStatusFilter)
+    ? (params.status as AssessmentStatusFilter)
     : "all";
 
   const [assessments, courses, programmes] = await Promise.all([
     listAssessments({
-      courseId: searchParams.courseId,
-      programmeId: searchParams.programmeId,
+      courseId: params.courseId,
+      programmeId: params.programmeId,
       status,
     }),
     listCourseFilterOptions(),
@@ -63,10 +64,10 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Create an assessment (title, type, deadline) for this offering, or view all
-            assessments and marksheets on the{" "}
+            assessments and marksheets on the
             <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
               Assessments
-            </Link>{" "}
+            </Link>
             page.
           </p>
         </section>
@@ -79,8 +80,8 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
         courses={courses}
         programmes={programmes}
         selected={{
-          courseId: searchParams.courseId,
-          programmeId: searchParams.programmeId,
+          courseId: params.courseId,
+          programmeId: params.programmeId,
           status,
         }}
       />

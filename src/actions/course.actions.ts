@@ -20,7 +20,7 @@ import type { ActionResult } from "./programme.actions";
 // ─── Course: Create ───────────────────────────────────────────────────────────
 
 export async function createCourseAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
@@ -55,9 +55,9 @@ export async function createCourseAction(
 // ─── Course: Update ───────────────────────────────────────────────────────────
 
 export async function updateCourseAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
 
   const raw = {
@@ -80,7 +80,7 @@ export async function updateCourseAction(
     revalidatePath("/courses");
     revalidatePath(`/courses/${parsed.data.id}`);
     revalidatePath(`/programmes/${parsed.data.programmeId}`);
-    return { success: true, data: undefined };
+    return { success: true, data: { id: parsed.data.id } };
   } catch (err) {
     if (err instanceof ServiceError) {
       return { success: false, error: err.message, field: err.field };
@@ -93,7 +93,7 @@ export async function updateCourseAction(
 // ─── Offering: Create ─────────────────────────────────────────────────────────
 
 export async function createOfferingAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
@@ -129,9 +129,9 @@ export async function createOfferingAction(
 // ─── Offering: Update ─────────────────────────────────────────────────────────
 
 export async function updateOfferingAction(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string }> | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
 
   const raw = {
@@ -151,7 +151,7 @@ export async function updateOfferingAction(
     await updateOffering(parsed.data);
     revalidatePath("/course-offerings");
     revalidatePath(`/course-offerings/${parsed.data.id}`);
-    return { success: true, data: undefined };
+    return { success: true, data: { id: parsed.data.id } };
   } catch (err) {
     if (err instanceof ServiceError) {
       return { success: false, error: err.message, field: err.field };

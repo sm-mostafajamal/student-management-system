@@ -55,7 +55,7 @@ export function SubmissionForm({
       )}
       {state && state.success && (
         <p role="status" className="rounded-md bg-green-50 p-2 text-sm text-green-800">
-          Submitted successfully{state.data.isLate ? " (marked late)" : ""}. Attempt{" "}
+          Submitted successfully{state.data.isLate ? " (marked late)" : ""}. Attempt
           {state.data.attemptNumber}.
         </p>
       )}

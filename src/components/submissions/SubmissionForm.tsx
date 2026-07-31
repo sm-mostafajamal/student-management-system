@@ -44,7 +44,7 @@ export function SubmissionForm({
       )}
       {state && state.success && (
         <p className="text-sm text-emerald-600">
-          Submitted (attempt {state.data.attemptNumber}).{" "}
+          Submitted (attempt {state.data.attemptNumber}).
           {state.data.isLate ? "Flagged as late." : "On time."}
         </p>
       )}

@@ -33,7 +33,7 @@ export function DeleteStudentDialog({ studentId, studentName }: { studentId: str
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Delete {studentName}</span>

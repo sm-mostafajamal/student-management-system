@@ -115,7 +115,8 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
             </thead>
             <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800 dark:bg-zinc-950">
               {items.map((o) => {
-                const pct = o.capacity > 0 ? (o._count.enrollments / o.capacity) * 100 : 0;
+                const capacity = o?.capacity ?? 0;
+                const pct = capacity > 0 ? (o?._count.enrollments / capacity) * 100 : 0;
                 const isFull = pct >= 100;
                 const isNearFull = pct >= 80 && !isFull;
                 return (
@@ -143,7 +144,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
                       {SEMESTER_LABELS[o.semester] ?? o.semester}
                     </td>
                     <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
-                      {o.instructor.firstName} {o.instructor.lastName}
+                      {o?.instructor?.firstName} {o?.instructor?.lastName}
                     </td>
                     <td className="px-4 py-3">
                       <span
