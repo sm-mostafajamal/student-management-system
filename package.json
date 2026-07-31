@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
@@ -13,7 +12,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force && tsx prisma/seed.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build": "prisma generate && next build"
+
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -25,7 +26,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.462.0",
-    "next": "^15.5.22",
+    "next": "^15.0.3",
     "next-themes": "^0.4.3",
     "pg": "^8.22.0",
     "react": "^18.3.1",
@@ -53,11 +54,6 @@
     "typescript": "^5.9.3"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
-  {
-  "scripts": {
-    "build": "prisma generate && next build"
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   }
-}
 }
