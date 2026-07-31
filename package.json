@@ -54,5 +54,10 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  {
+  "scripts": {
+    "build": "prisma generate && next build"
   }
+}
 }
