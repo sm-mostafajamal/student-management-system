@@ -73,7 +73,7 @@ export async function recordGrade(input: RecordGradeInput, actingUser: SessionUs
   // Hidden case: changing a grade AFTER it was published. Require an
   // explicit reason and auto-unpublish — the corrected score is never
   // visible to the student until staff re-confirms it via publishResult.
-  if (existing.isPublished && !input.reason) {
+  if (existing?.isPublished && !input.reason) {
     throw new DomainError(
       "REASON_REQUIRED",
       "This result is already published. Provide a reason for the correction."

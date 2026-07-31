@@ -1,18 +1,10 @@
-/**
- * next.config.ts
- */
-
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Strict mode: catches React lifecycle issues in development
-  reactStrictMode: true,
-
-  // Typed Next.js routes — catches broken hrefs at compile time
-  typedRoutes: true,
-
-  // Silence the Prisma require('module') warning in serverless builds
-  serverExternalPackages: ["@prisma/client", "prisma"],
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

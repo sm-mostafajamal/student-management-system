@@ -26,6 +26,12 @@ export default async function AssessmentSubmissionsPage({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
+      <Link
+        href="/assessments"
+        className="text-sm text-gray-500 hover:underline dark:text-gray-400 pb-4"
+      >
+        ← Back to assessments
+      </Link>
       <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
         {assessment.title} — Submissions
       </h1>

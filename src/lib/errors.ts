@@ -182,7 +182,8 @@ export class DomainError extends Error {
       | "INVALID_FILE"
       | "WEIGHT_EXCEEDED"
       | "REASON_REQUIRED"
-      | "CONFLICT",
+      | "CONFLICT"
+      | "DUPLICATE_EMAIL",
     message: string
   ) {
     super(message);

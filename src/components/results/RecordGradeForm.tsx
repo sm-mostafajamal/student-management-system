@@ -80,10 +80,14 @@ export function RecordGradeForm({
       )}
 
       {state && !state.success && (
-        <p className="text-sm text-red-600">
-          {state.error}
-          {state.fieldErrors?.reason && ` — ${state.fieldErrors.reason[0]}`}
-        </p>
+        <div className="text-sm text-red-600 dark:text-red-400 space-y-1">
+          <p>{state.error}</p>
+          {state.fieldErrors && Object.entries(state.fieldErrors).map(([field, errors]) => (
+            <p key={field} className="text-xs">
+              <span className="font-medium">{field}:</span> {errors?.[0]}
+            </p>
+          ))}
+        </div>
       )}
     </form>
   );

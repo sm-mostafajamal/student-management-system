@@ -118,20 +118,22 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
                   </td>
                   <td className="p-3">{a.dueDate.toLocaleDateString()}</td>
                   <td className="p-3">
-                    <span
-                      className={
-                        a.isOpen
-                          ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
-                          : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                      }
-                    >
-                      {a.isOpen ? "Open" : "Closed"}
-                    </span>
-                    {a.ungradedLateCount > 0 && (
-                      <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        {a.ungradedLateCount} late pending
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span
+                        className={
+                          a.isOpen
+                            ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                            : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                        }
+                      >
+                        {a.isOpen ? "Open" : "Closed"}
                       </span>
-                    )}
+                      {a.ungradedLateCount > 0 && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          {a.ungradedLateCount} late submission
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">{a.submissionCount}</td>
                   <td className="p-3 text-right">

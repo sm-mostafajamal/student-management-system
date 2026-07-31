@@ -232,10 +232,8 @@ function DeactivateAssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button type="button" variant="destructive">
+      <DialogTrigger render={<Button type="button" variant="destructive" />}>
           Deactivate assessment
-        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

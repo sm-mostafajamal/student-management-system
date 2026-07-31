@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { getMarksheetForCourseOffering } from "@/services/result.service";
@@ -16,11 +18,16 @@ export default async function MarksheetPage({
   if (!user || user.role !== Role.STAFF) {
     redirect("/");
   }
-
   const entries = await getMarksheetForCourseOffering(courseOfferingId, user);
-
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
+      <Link
+        href="/assessments"
+        className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to assessments
+      </Link>
       <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Marksheet</h1>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {entries.length} enrolled student(s). Only published results are visible to students.
