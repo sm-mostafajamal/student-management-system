@@ -59,7 +59,19 @@ Other useful scripts:
 npm run db:studio   # browse the DB in Prisma Studio
 npm run db:reset    # drop, re-migrate, and re-seed in one step
 npm run type-check  # tsc --noEmit
+npm run build        # prisma generate + next build
 ```
+## Environment Variables
+ 
+Copy `.env.example` to `.env` and fill in:
+ 
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma (`prisma/schema.prisma` → `datasource db`). The app will not boot or migrate without it. e.g. `postgresql://user:password@localhost:5432/sms_db` |
+| `NODE_ENV` | No | Set automatically by the Next.js CLI (`dev`/`build`/`start`) — you don't need to set this yourself. Only listed because `src/lib/prisma.ts` and `src/app/api/role/route.ts` branch on it (query logging in dev, secure cookies in prod). |
+| `UPLOAD_DIR` | No | Optional override for where assessment submission files are written. Defaults to a local `./uploads` folder derived from `process.cwd()` in `src/lib/file-storage.ts`. No storage credentials or bucket config are required for the demo. |
+ 
+No other environment variables are read anywhere in the codebase — never commit a real `.env`, only `.env.example`.
 
 ## Demo Accounts / Role Toggle
 
