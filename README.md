@@ -3,8 +3,7 @@
 A focused Registry web app covering the four workflows a Registry Administrator uses
 daily: student enrollment, fees & payments, assessment submission, and marksheets/results.
 
-### Checkout the website: https://student-management-system-eosin-three.vercel.app 
-
+Checkout the website: https://student-management-system-eosin-three.vercel.app 
 ## Overview
 
 Built as a technical assessment response, not a full platform. The data model is
