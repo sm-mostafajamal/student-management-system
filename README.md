@@ -61,17 +61,22 @@ npm run db:reset    # drop, re-migrate, and re-seed in one step
 npm run type-check  # tsc --noEmit
 npm run build        # prisma generate + next build
 ```
+
 ## Environment Variables
- 
+
 Copy `.env.example` to `.env` and fill in:
- 
+
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma (`prisma/schema.prisma` → `datasource db`). The app will not boot or migrate without it. e.g. `postgresql://user:password@localhost:5432/sms_db` |
 | `NODE_ENV` | No | Set automatically by the Next.js CLI (`dev`/`build`/`start`) — you don't need to set this yourself. Only listed because `src/lib/prisma.ts` and `src/app/api/role/route.ts` branch on it (query logging in dev, secure cookies in prod). |
-| `UPLOAD_DIR` | No | Optional override for where assessment submission files are written. Defaults to a local `./uploads` folder derived from `process.cwd()` in `src/lib/file-storage.ts`. No storage credentials or bucket config are required for the demo. |
- 
+
 No other environment variables are read anywhere in the codebase — never commit a real `.env`, only `.env.example`.
+
+> Assessment submission files are written to a local `./uploads` folder derived from
+> `process.cwd()` (`src/lib/file-storage.ts::UPLOADS_ROOT`) — no storage credentials or
+> bucket config are required for the demo. This path is currently hardcoded, not
+> configurable via an environment variable.
 
 ## Demo Accounts / Role Toggle
 
@@ -84,10 +89,10 @@ Actions read the active role from that cookie.
 You must run `npm run db:seed` first, or the role picker will return
 "No active STAFF/STUDENT user found."
 
-Seeded staff (Registry Admin + two lecturers) and 6 seeded students covering every
-`StudentStatus` (Active ×3, Suspended, Deferred, Graduated) are created by
-`prisma/seed.ts` — see the console output after seeding for the full list, or
-browse `User`/`Student` in Prisma Studio.
+Seeded staff (Registry Admin + two lecturers) and 6 seeded students covering a spread
+of `StudentStatus` values (`ENROLLED` ×3, `SUSPENDED`, `DEFERRED`, `COMPLETED`) are
+created by `prisma/seed.ts` — see the console output after seeding for the full list,
+or browse `User`/`Student` in Prisma Studio.
 
 ## Project Structure
 
@@ -99,7 +104,8 @@ src/
                            course-offerings, enrollments, fees, payments,
                            assessments, grades
     (student)/             Student-only routes: my-courses, my-fees, results
-    api/                    role toggle + submission file download route
+    api/                    role toggle, user-switcher list, and submission
+                            file download routes
   actions/, app/actions/  Server Actions (form mutations)
   services/               Business logic — fee, payment, submission, result, etc.
   server/queries/         Read-only query helpers used by pages
