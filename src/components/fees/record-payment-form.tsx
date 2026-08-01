@@ -3,18 +3,21 @@
 import { useState, useTransition } from "react";
 import { recordPaymentAction } from "@/actions/payment.actions";
 
-const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "CARD", "MOBILE_MONEY", "CHEQUE"] as const;
+const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "CARD", "ONLINE", "MOBILE_MONEY", "CHEQUE"] as const;
 
 export function RecordPaymentForm({ feeId, balance }: { feeId: string; balance: number }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  if (balance <= 0) {
-    return <p className="text-sm text-green-700 dark:text-green-400">Fully settled — no balance outstanding.</p>;
-  }
-
   return (
+    balance <= 0 ?
+    <p className="text-sm text-green-700 dark:text-green-400">
+    {balance < 0
+        ? `Fully settled — this line has a credit of ${Math.abs(balance).toFixed(2)} from an overpayment.`
+        : "Fully settled — no balance outstanding."}
+    </p>
+    :
     <form
       className="space-y-3"
       action={(formData: FormData) => {
@@ -40,12 +43,14 @@ export function RecordPaymentForm({ feeId, balance }: { feeId: string; balance: 
             name="amount"
             type="number"
             step="0.01"
-            max={balance}
             min={0.01}
             required
-            placeholder={`Max ${balance.toFixed(2)}`}
+            placeholder={`Balance ${balance.toFixed(2)}`}
             className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            Paying more than the balance is allowed — the difference is recorded as a credit.
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Method</label>
@@ -62,13 +67,14 @@ export function RecordPaymentForm({ feeId, balance }: { feeId: string; balance: 
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Reference</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Reference <span className="font-normal text-gray-400">(optional)</span>
+          </label>
           <input
             name="reference"
             type="text"
-            required
             minLength={3}
-            placeholder="Receipt / transaction #"
+            placeholder="Leave blank to auto-generate"
             className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>

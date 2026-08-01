@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import type { CreateStudentInput, UpdateStudentInput, StudentQueryInput } from "@/lib/validations/student.schema";
 import type { StudentWithProgramme, PaginatedResult } from "@/types";
+import { assignProgrammeBaseFee } from "@/services/fee.service";
 
 
 async function assertEmailAvailable(
@@ -168,7 +169,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
       const admissionYear = await resolveAdmissionYear(tx, input.admissionAcademicYearId);
       const studentNumber = await generateStudentNumber(tx, admissionYear.startDate.getFullYear());
 
-      return tx.student.create({
+      const student = await tx.student.create({
         data: {
           studentNumber,
           programme: { connect: { id: programme.id } },
@@ -188,6 +189,13 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
         },
         include: studentInclude,
       });
+
+      // Bill the programme's base fee immediately on admission (snapshotted
+      // — a later change to Programme.baseFee never retroactively reprices
+      // this student). No-ops cleanly if baseFee is 0.
+      await assignProgrammeBaseFee(student.id, tx);
+
+      return student;
     });
   } catch (err) {
     if (err instanceof AppError) throw err;

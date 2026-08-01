@@ -30,6 +30,7 @@ export async function createCourseAction(
     title: formData.get("title"),
     creditHours: Number(formData.get("creditHours")),
     programmeId: formData.get("programmeId"),
+    courseFee: formData.get("courseFee"),
   };
 
   const parsed = CreateCourseSchema.safeParse(raw);
@@ -67,6 +68,7 @@ export async function updateCourseAction(
     creditHours: Number(formData.get("creditHours")),
     programmeId: formData.get("programmeId"),
     isActive: formData.get("isActive") === "true",
+    courseFee: formData.get("courseFee"),
   };
 
   const parsed = UpdateCourseSchema.safeParse(raw);

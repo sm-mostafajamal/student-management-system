@@ -174,6 +174,31 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
         <FieldError message={fieldError("departmentName")} />
       </div>
 
+      <div>
+        <label
+          htmlFor="baseFee"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Base Programme Fee
+          <span className="ml-1 text-xs text-zinc-400">(billed once per student on admission)</span>
+        </label>
+        <input
+          id="baseFee"
+          name="baseFee"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={programme?.baseFee !== undefined ? Number(programme.baseFee) : 0}
+          placeholder="0.00"
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        />
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+          Leave 0 for programmes that bill via Fee Structures instead.
+          Changing this does not retroactively reprice already-admitted students.
+        </p>
+        <FieldError message={fieldError("baseFee")} />
+      </div>
+
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"

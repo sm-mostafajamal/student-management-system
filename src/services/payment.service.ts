@@ -34,11 +34,26 @@ export class DuplicatePaymentReferenceError extends Error {
   }
 }
 
+/**
+ * NOT thrown anymore — overpayment is a legitimate outcome (staff
+ * intentionally recording a rounded-up bank transfer, a credit-note
+ * workflow, etc.), so it's allowed through and simply shows up as a
+ * negative balance ("credit") on the Fee and the student's summary. This
+ * class is kept (unused) so any external code still importing/catching it
+ * doesn't break.
+ */
 export class OverpaymentError extends Error {
   constructor(public balance: number) {
     super(`Payment amount exceeds the outstanding balance of ${balance.toFixed(2)}.`);
     this.name = "OverpaymentError";
   }
+}
+
+/** Generates a reasonably-unique receipt reference when staff leave it blank. */
+export function generatePaymentReference(): string {
+  const stamp = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `RCPT-${stamp}-${rand}`;
 }
 
 // ─── recordPayment ──────────────────────────────────────────────────────
@@ -52,27 +67,23 @@ export async function recordPayment(
   });
   if (!fee) throw new FeeNotFoundError(input.feeId);
 
+  const reference = input.reference?.trim() || generatePaymentReference();
+
   const duplicate = await prisma.payment.findUnique({
-    where: { reference: input.reference },
+    where: { reference },
   });
-  if (duplicate) throw new DuplicatePaymentReferenceError(input.reference);
+  if (duplicate) throw new DuplicatePaymentReferenceError(reference);
 
-  const totalPaid = fee.payments.reduce(
-    (sum, p) => sum + toNumberRequired(p.amount),
-    0
-  );
-  const balance = toNumberRequired(fee.amountDue) - toNumberRequired(fee.waivedAmount) - totalPaid;
-
-  if (input.amount > balance + 0.001) {
-    throw new OverpaymentError(balance);
-  }
+  // Overpayment is allowed by design (see OverpaymentError doc comment
+  // above) — the balance is simply allowed to go negative, which the UI
+  // surfaces as a credit. No block here.
 
   return prisma.$transaction(async (tx) => {
     const payment = await tx.payment.create({
       data: {
         feeId: input.feeId,
         studentId: input.studentId,
-        reference: input.reference,
+        reference,
         amount: fromNumber(input.amount),
         method: input.method as PaymentMethod,
         status: PaymentStatus.COMPLETED,

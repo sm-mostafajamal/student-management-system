@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { ProgrammeLevel } from "@/types";
 
+// Shared money field — same rules as the moneySchema in common.ts but
+// defined inline here so this file stays self-contained.
+const feeField = z.coerce
+  .number({ invalid_type_error: "Fee must be a number" })
+  .min(0, "Fee cannot be negative")
+  .max(100_000_000, "Fee value is unrealistically large")
+  .default(0);
+
 // ─── Programme ────────────────────────────────────────────────────────────────
 export const CreateProgrammeSchema = z.object({
   code: z
@@ -27,6 +35,7 @@ export const CreateProgrammeSchema = z.object({
     .max(120, "Department name must be at most 120 characters")
     .optional()
     .transform((v) => v?.trim() || undefined),
+  baseFee: feeField,
 });
 export const UpdateProgrammeSchema = CreateProgrammeSchema.extend({
   id: z.string().cuid("Invalid programme ID"),
@@ -54,6 +63,7 @@ export const CreateCourseSchema = z.object({
     .min(1, "Credit hours must be at least 1")
     .max(12, "Credit hours must be at most 12"),
   programmeId: z.string().cuid("Invalid programme ID"),
+  courseFee: feeField,
 });
 export const UpdateCourseSchema = CreateCourseSchema.extend({
   id: z.string().cuid("Invalid course ID"),

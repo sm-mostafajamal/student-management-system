@@ -31,7 +31,7 @@ import {
   FeeStatus,
   PaymentStatus,
   Semester,
-  type FeeCategory,
+  FeeCategory,
 } from "@prisma/client";
 import { z } from "zod";
 
@@ -130,6 +130,228 @@ export async function bulkAssignFeesForProgramme(
   return { totalStudents: students.length, succeeded, failed };
 }
 
+// ─── Programme base fee & per-course fee billing ──────────────────────────────
+//
+// "What a student actually owes" = Programme.baseFee (billed once) + the
+// courseFee of every course they're enrolled in (billed once per
+// Enrollment). Both are SNAPSHOTTED into a Fee row at billing time, using
+// the exact same discipline as the FeeStructure→Fee flow above: an
+// already-billed student is never retroactively repriced just because the
+// programme/course catalog changes later.
+//
+// The running total ("Total Fee Assigned") and outstanding balance are
+// never stored — they're always the live sum of a student's Fee rows minus
+// their live payments (see getStudentFinancialSummary / getStudentFeeBreakdown),
+// so a newly added course or a newly recorded payment is reflected
+// immediately with nothing to resync.
+
+/**
+ * Bills a student ONCE for their programme's base fee. Safe to call
+ * multiple times (e.g. re-run after a partial failure) — a second call is
+ * a no-op because a Fee for this (student, PROGRAMME_FEE) pair already
+ * exists. Skips silently if baseFee is 0 (nothing owed, nothing to bill).
+ */
+export async function assignProgrammeBaseFee(
+  studentId: string,
+  tx: Prisma.TransactionClient | typeof prisma = prisma
+): Promise<ApiResult<{ created: boolean }>> {
+  try {
+    const student = await tx.student.findUnique({
+      where: { id: studentId, deletedAt: null },
+      include: { programme: true },
+    });
+    assertFound(student, "Student");
+
+    const baseFee = toNumberRequired(student.programme.baseFee);
+    if (baseFee <= 0) return ok({ created: false });
+
+    const existing = await tx.fee.findFirst({
+      where: { studentId, category: FeeCategory.PROGRAMME_FEE },
+      select: { id: true },
+    });
+    if (existing) return ok({ created: false });
+
+    const academicYearId =
+      student.admissionAcademicYearId ??
+      (await tx.academicYear.findFirst({ where: { isCurrent: true } }))?.id;
+    if (!academicYearId) {
+      throw new FeeAssignmentError(
+        "Cannot bill the programme fee: student has no admission year and no academic year is marked current."
+      );
+    }
+
+    await tx.fee.create({
+      data: {
+        studentId,
+        academicYearId,
+        semester: Semester.FIRST_SEMESTER,
+        category: FeeCategory.PROGRAMME_FEE,
+        amountDue: student.programme.baseFee, // snapshot
+        dueDate: addDays(new Date(), 30),
+      },
+    });
+
+    return ok({ created: true });
+  } catch (err) {
+    if (err instanceof AppError) return err.toApiResult() as ApiResult<never>;
+    if (err instanceof FeeAssignmentError) return fail(err.message);
+    console.error("[FeeService.assignProgrammeBaseFee]", err);
+    return fail("Failed to bill the programme base fee");
+  }
+}
+
+/**
+ * Bills the course's fee for one Enrollment, snapshotting Course.courseFee
+ * at enrollment time. Idempotent via the Fee_enrollmentId_key unique
+ * constraint — re-running this (e.g. a student re-enrolling after a drop)
+ * silently no-ops if a Fee already exists for this Enrollment. Skips
+ * entirely if the course's fee is 0 (e.g. a free elective).
+ */
+export async function assignCourseFeeForEnrollment(
+  enrollmentId: string,
+  tx: Prisma.TransactionClient | typeof prisma = prisma
+): Promise<ApiResult<{ created: boolean }>> {
+  try {
+    const enrollment = await tx.enrollment.findUnique({
+      where: { id: enrollmentId },
+      include: {
+        courseOffering: { include: { course: true, academicYear: true } },
+      },
+    });
+    assertFound(enrollment, "Enrollment");
+
+    const courseFee = toNumberRequired(enrollment.courseOffering.course.courseFee);
+    if (courseFee <= 0) return ok({ created: false });
+
+    try {
+      await tx.fee.create({
+        data: {
+          studentId: enrollment.studentId,
+          enrollmentId: enrollment.id,
+          academicYearId: enrollment.courseOffering.academicYearId,
+          semester: enrollment.courseOffering.semester,
+          category: FeeCategory.COURSE_FEE,
+          amountDue: enrollment.courseOffering.course.courseFee, // snapshot
+          dueDate: addDays(new Date(), 30),
+        },
+      });
+      return ok({ created: true });
+    } catch (err) {
+      // Already billed for this enrollment (re-enroll after a drop, or a
+      // double-submitted request) — not an error, just a no-op.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        return ok({ created: false });
+      }
+      throw err;
+    }
+  } catch (err) {
+    if (err instanceof AppError) return err.toApiResult() as ApiResult<never>;
+    console.error("[FeeService.assignCourseFeeForEnrollment]", err);
+    return fail("Failed to bill the course fee");
+  }
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/**
+ * The full "what does this student owe and why" breakdown for the student
+ * detail page: programme base fee, every enrolled course with its
+ * individual fee, full payment history per line item, and the live
+ * outstanding balance. Nothing here is stored — it's assembled fresh from
+ * Fee + Payment + Enrollment on every call.
+ */
+export async function getStudentFeeBreakdown(studentId: string) {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId, deletedAt: null },
+      include: { programme: true },
+    });
+    assertFound(student, "Student");
+
+    const [fees, enrollments] = await Promise.all([
+      prisma.fee.findMany({
+        where: { studentId },
+        include: { payments: { orderBy: { paidAt: "desc" } } },
+        orderBy: [{ category: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.enrollment.findMany({
+        where: { studentId },
+        include: { courseOffering: { include: { course: true } } },
+        orderBy: { enrolledAt: "desc" },
+      }),
+    ]);
+
+    const feeLines = fees.map((fee) => {
+      const amountDue = toNumberRequired(fee.amountDue);
+      const waivedAmount = toNumberRequired(fee.waivedAmount);
+      const totalPaid = fee.payments
+        .filter((p) => p.status === PaymentStatus.COMPLETED)
+        .reduce((sum, p) => sum + toNumberRequired(p.amount), 0);
+      const balance = amountDue - waivedAmount - totalPaid;
+      return {
+        fee,
+        amountDue,
+        waivedAmount,
+        totalPaid,
+        balance,
+        isOverdue: fee.dueDate != null && fee.dueDate < new Date() && balance > 0,
+        // The Enrollment (if this is a COURSE_FEE line) may have since been
+        // dropped — the Fee and its payment history still show, per the
+        // "deferred/withdrawn students keep historical fees" requirement.
+        course: enrollments.find((e) => e.id === fee.enrollmentId)?.courseOffering.course ?? null,
+      };
+    });
+
+    const totalOwed = feeLines.reduce((s, l) => s + l.amountDue, 0);
+    const totalWaived = feeLines.reduce((s, l) => s + l.waivedAmount, 0);
+    const totalPaid = feeLines.reduce((s, l) => s + l.totalPaid, 0);
+    const outstandingBalance = totalOwed - totalWaived - totalPaid;
+
+    const programmeFeeLine = feeLines.find((l) => l.fee.category === FeeCategory.PROGRAMME_FEE) ?? null;
+    const courseFeeLines = feeLines.filter((l) => l.fee.category === FeeCategory.COURSE_FEE);
+    const otherFeeLines = feeLines.filter(
+      (l) => l.fee.category !== FeeCategory.PROGRAMME_FEE && l.fee.category !== FeeCategory.COURSE_FEE
+    );
+
+    // Courses the student is enrolled in but that haven't been billed yet
+    // (e.g. free elective, courseFee=0, or billing hasn't run) — still
+    // worth listing so staff see the full course load, not just charges.
+    const enrolledCourses = enrollments
+      .filter((e) => e.status === "ENROLLED")
+      .map((e) => ({
+        enrollment: e,
+        course: e.courseOffering.course,
+        feeLine: feeLines.find((l) => l.fee.enrollmentId === e.id) ?? null,
+      }));
+
+    return ok({
+      student,
+      programme: student.programme,
+      baseFee: toNumberRequired(student.programme.baseFee),
+      programmeFeeLine,
+      courseFeeLines,
+      otherFeeLines,
+      enrolledCourses,
+      totalOwed,
+      totalWaived,
+      totalPaid,
+      outstandingBalance,
+      hasOverdueFees: feeLines.some((l) => l.isOverdue),
+      isOverdueMoreThan30Days: feeLines.some(
+        (l) => l.isOverdue && l.fee.dueDate != null && l.fee.dueDate < addDays(new Date(), -30)
+      ),
+    });
+  } catch (err) {
+    if (err instanceof AppError) return err.toApiResult() as ApiResult<never>;
+    console.error("[FeeService.getStudentFeeBreakdown]", err);
+    return fail("Failed to build student fee breakdown");
+  }
+}
+
 // ─── Balance computation ──────────────────────────────────────────────────────
 
 /**
@@ -156,7 +378,9 @@ export async function computeFeeBalance(
       (sum, p) => sum + toNumberRequired(p.amount),
       0
     );
-    const balance = Math.max(0, amountDue - waivedAmount - totalPaid);
+    // Deliberately NOT clamped to 0 — a negative balance is a real credit
+    // (overpayment) that the UI should surface, not hide.
+    const balance = amountDue - waivedAmount - totalPaid;
     const isOverdue =
       fee.dueDate != null && fee.dueDate < new Date() && balance > 0;
 
@@ -218,7 +442,9 @@ export async function getStudentFinancialSummary(
       totalOwed,
       totalPaid,
       totalWaived,
-      outstandingBalance: Math.max(0, totalOwed - totalWaived - totalPaid),
+      // Not clamped to 0 — see computeFeeBalance's rationale. A student who
+      // overpaid one fee while owing on another nets out correctly here.
+      outstandingBalance: totalOwed - totalWaived - totalPaid,
       hasOverdueFees,
     });
   } catch (err) {

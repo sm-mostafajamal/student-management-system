@@ -62,6 +62,8 @@ enum FeeCategory {
   REGISTRATION
   FINE
   OTHER
+  PROGRAMME_FEE 
+  COURSE_FEE    
 }
 
 enum FeeStatus {
@@ -79,6 +81,7 @@ enum PaymentMethod {
   CARD
   MOBILE_MONEY
   CHEQUE
+  ONLINE
 }
 
 enum PaymentStatus {
@@ -187,6 +190,12 @@ model Programme {
   level          ProgrammeLevel
   durationYears  Int
   departmentName String?
+  /// Base programme fee (e.g. tuition/registration), billed ONCE per
+  /// student as a snapshotted Fee (category=PROGRAMME_FEE) — see
+  /// fee.service.ts::assignProgrammeBaseFee. Changing this later never
+  /// retroactively alters an already-billed student, same snapshot
+  /// discipline as FeeStructure/Fee elsewhere in this file.
+  baseFee        Decimal        @default(0) @db.Decimal(10, 2)
   isActive       Boolean        @default(true)
   deletedAt      DateTime?
   createdAt      DateTime       @default(now())
@@ -208,6 +217,10 @@ model Course {
   title         String
   creditHours   Int
   programmeId   String? // nullable: general-education / cross-programme courses
+  /// Per-course fee (e.g. lab fee) — can be 0 for courses with no extra
+  /// charge. Snapshotted into a Fee (category=COURSE_FEE) the moment a
+  /// student enrolls — see fee.service.ts::assignCourseFeeForEnrollment.
+  courseFee     Decimal   @default(0) @db.Decimal(10, 2)
   isActive      Boolean   @default(true)
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
@@ -300,6 +313,7 @@ model Enrollment {
 
   student        Student        @relation(fields: [studentId], references: [id], onDelete: Restrict)
   courseOffering CourseOffering @relation(fields: [courseOfferingId], references: [id], onDelete: Restrict)
+  fee            Fee?           // the snapshotted COURSE_FEE billed for this enrollment, if the course has one
 
   @@unique([studentId, courseOfferingId])
   @@index([courseOfferingId, status])
@@ -344,6 +358,13 @@ model Fee {
   id             String     @id @default(cuid())
   studentId      String
   feeStructureId String?    // nullable: ad-hoc fees/fines not from a template
+  /// Set only for category=COURSE_FEE — the specific Enrollment that
+  /// caused this fee to be billed. One Fee per Enrollment (enforced by
+  /// @unique below), so re-running the enroll flow never double-bills.
+  /// SetNull (not Restrict) on delete: if the Enrollment row is ever
+  /// removed, the fee is still real money owed/paid and must survive as
+  /// history — see "deferred/withdrawn students keep historical fees".
+  enrollmentId   String?    @unique
   academicYearId String
   semester       Semester
   category       FeeCategory
@@ -357,6 +378,7 @@ model Fee {
 
   student      Student       @relation(fields: [studentId], references: [id], onDelete: Restrict)
   feeStructure FeeStructure? @relation(fields: [feeStructureId], references: [id], onDelete: SetNull)
+  enrollment   Enrollment?   @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
   academicYear AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
   payments     Payment[]
 

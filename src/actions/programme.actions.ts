@@ -30,6 +30,7 @@ export async function createProgrammeAction(
     level: formData.get("level"),
     durationYears: formData.get("durationYears"),
     departmentName: formData.get("departmentName") || undefined,
+    baseFee: formData.get("baseFee"),
   };
 
   const parsed = CreateProgrammeSchema.safeParse(raw);
@@ -71,6 +72,7 @@ export async function updateProgrammeAction(
     durationYears: formData.get("durationYears"),
     departmentName: formData.get("departmentName") || undefined,
     isActive: formData.get("isActive") === "true",
+    baseFee: formData.get("baseFee"),
   };
 
   const parsed = UpdateProgrammeSchema.safeParse(raw);

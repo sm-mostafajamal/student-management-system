@@ -37,11 +37,15 @@ export const recordPaymentSchema = z.object({
     .positive("Amount must be greater than zero")
     .max(10_000_000),
   method: z.nativeEnum(PaymentMethod),
+  // Optional — recordPayment() auto-generates one (e.g. "RCPT-...") when
+  // left blank, per "auto-generate reference number if not provided".
   reference: z
     .string()
     .trim()
     .min(3, "Reference must be at least 3 characters")
-    .max(100, "Reference is too long"),
+    .max(100, "Reference is too long")
+    .optional()
+    .or(z.literal("")),
   paidAt: z.coerce.date().refine((d) => d.getTime() <= Date.now() + 24 * 60 * 60 * 1000, {
     message: "Payment date cannot be in the future",
   }),

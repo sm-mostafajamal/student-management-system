@@ -145,6 +145,32 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
         <FieldError message={fieldError("title")} />
       </div>
 
+      {/* Course Fee */}
+      <div>
+        <label
+          htmlFor="courseFee"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Course Fee
+          <span className="ml-1 text-xs text-zinc-400">(billed once per enrolment)</span>
+        </label>
+        <input
+          id="courseFee"
+          name="courseFee"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={course?.courseFee !== undefined ? Number(course.courseFee) : 0}
+          placeholder="0.00"
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        />
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+          Leave 0 for courses with no extra charge (e.g. general-education courses).
+          Changing this does not retroactively reprice existing enrolments.
+        </p>
+        <FieldError message={fieldError("courseFee")} />
+      </div>
+
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"

@@ -10,6 +10,7 @@ import { ok, fail, assertFound, AppError } from "@/lib/errors";
 import type { ApiResult } from "@/types";
 import { EnrollmentStatus, type Enrollment } from "@prisma/client";
 import { z } from "zod";
+import { assignCourseFeeForEnrollment } from "@/services/fee.service";
 
 
 export const EnrollStudentSchema = z.object({
@@ -92,6 +93,10 @@ export async function enrollStudent(
             enrolledAt: new Date(),
           },
         });
+        // Idempotent — if this enrollment was already billed for its
+        // course fee the first time around, this silently no-ops rather
+        // than double-charging on re-enrollment.
+        await assignCourseFeeForEnrollment(updated.id);
         return ok(updated);
       }
     }
@@ -119,6 +124,12 @@ export async function enrollStudent(
         status: EnrollmentStatus.ENROLLED,
       },
     });
+
+    // Bill the course's fee (if it has one) the moment enrollment happens —
+    // this is "a student takes an additional course later" updating their
+    // total assigned fee immediately, with the amount snapshotted so a
+    // later change to Course.courseFee doesn't retroactively reprice it.
+    await assignCourseFeeForEnrollment(enrollment.id);
 
     return ok(enrollment);
   } catch (err) {
