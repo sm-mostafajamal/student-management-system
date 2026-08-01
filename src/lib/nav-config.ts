@@ -63,6 +63,18 @@ export const NAV_CONFIG: NavSection[] = [
         icon: "ClipboardList",
         roles: [Role.STAFF],
       },
+      {
+        label: "Fee Management",
+        href: "/fees",
+        icon: "CreditCard",
+        roles: [Role.STAFF],
+      },
+      {
+        label: "Payments",
+        href: "/payments",
+        icon: "Banknote",
+        roles: [Role.STAFF],
+      },
     ],
   },
   {
@@ -97,18 +109,6 @@ export const NAV_CONFIG: NavSection[] = [
   {
     title: "Finance",
     items: [
-      {
-        label: "Fee Management",
-        href: "/fees",
-        icon: "CreditCard",
-        roles: [Role.STAFF],
-      },
-      {
-        label: "Payments",
-        href: "/payments",
-        icon: "Banknote",
-        roles: [Role.STAFF],
-      },
       {
         label: "My Fees",
         href: "/my-fees",

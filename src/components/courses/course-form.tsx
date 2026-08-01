@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { Course, Programme } from "@prisma/client";
@@ -10,8 +10,7 @@ import { FormError, FieldError } from "@/components/ui/form-error";
 
 interface CourseFormProps {
   course?: Course;
-  programmes: Pick<Programme, "id" | "code" | "name">[];
-  /** Pre-select a programme (e.g. when navigating from /programmes/[id]/courses/new) */
+  programmes: { id: string; code: string; name: string; creditHourRate: number }[];
   defaultProgrammeId?: string;
 }
 
@@ -29,6 +28,25 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
+
+  // Track programme + credit hours so we can auto-calculate the course fee
+  // as creditHours × the selected programme's creditHourRate.
+  const [programmeId, setProgrammeId] = useState<string>(
+    course?.programmeId ?? defaultProgrammeId ?? ""
+  );
+  const [creditHours, setCreditHours] = useState<number>(course?.creditHours ?? 3);
+
+  const selectedProgramme = useMemo(
+    () => programmes.find((p) => p.id === programmeId),
+    [programmes, programmeId]
+  );
+
+  const creditHourRate = selectedProgramme ? Number(selectedProgramme.creditHourRate) : 0;
+
+  const calculatedFee = useMemo(() => {
+    const hours = Number.isFinite(creditHours) ? creditHours : 0;
+    return Math.max(hours, 0) * creditHourRate;
+  }, [creditHours, creditHourRate]);
 
   useEffect(() => {
     if (state?.success) {
@@ -66,7 +84,8 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           id="programmeId"
           name="programmeId"
           required
-          defaultValue={course?.programmeId ?? defaultProgrammeId ?? ""}
+          value={programmeId}
+          onChange={(e) => setProgrammeId(e.target.value)}
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
         >
           <option value="">Select a programme…</option>
@@ -117,7 +136,8 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
             required
             min={1}
             max={12}
-            defaultValue={course?.creditHours ?? 3}
+            value={creditHours}
+            onChange={(e) => setCreditHours(e.target.valueAsNumber || 0)}
             className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           />
           <FieldError message={fieldError("creditHours")} />
@@ -145,32 +165,41 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
         <FieldError message={fieldError("title")} />
       </div>
 
-      {/* Course Fee */}
+      {/* Course Fee — auto-calculated from creditHours × the selected programme's creditHourRate */}
       <div>
         <label
           htmlFor="courseFee"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
           Course Fee
-          <span className="ml-1 text-xs text-zinc-400">(billed once per enrollment)</span>
+          <span className="ml-1 text-xs text-zinc-400">(auto-calculated)</span>
         </label>
         <input
           id="courseFee"
-          name="courseFee"
-          type="number"
-          min={0}
-          step="0.01"
-          defaultValue={course?.courseFee !== undefined ? Number(course.courseFee) : 0}
-          placeholder="0.00"
-          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+          type="text"
           readOnly
           disabled
+          value={calculatedFee.toFixed(2)}
+          className="mt-1.5 block w-full cursor-not-allowed rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
         />
+        {/* Disabled inputs don't submit — this hidden field carries the actual value */}
+        <input type="hidden" name="courseFee" value={calculatedFee} />
         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-          Leave 0 for courses with no extra charge (e.g. general-education courses).
-          Changing this does not retroactively reprice existing enrolments. Note: if the
-          enrolling student's programme has a Credit Hour Rate configured, this flat fee is
-          ignored and <span className="font-medium">credit hours × that rate</span> is billed instead.
+          {selectedProgramme ? (
+            creditHourRate > 0 ? (
+              <>
+                {creditHours} credit{creditHours !== 1 ? "s" : ""} × ৳{creditHourRate.toFixed(2)}{" "}
+                per credit hour ({selectedProgramme.code}) = ৳{calculatedFee.toFixed(2)}
+              </>
+            ) : (
+              <>
+                {selectedProgramme.code} has no credit hour rate configured, so the fee is ৳0.00.
+                Set a Credit Hour Rate on the programme to enable billing.
+              </>
+            )
+          ) : (
+            "Select a programme above to calculate the fee."
+          )}
         </p>
         <FieldError message={fieldError("courseFee")} />
       </div>

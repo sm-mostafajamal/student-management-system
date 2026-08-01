@@ -4,6 +4,7 @@
 // module self-contained per task scope.
 
 import { prisma } from "@/lib/prisma";
+import { toNumber } from "@/lib/decimal";
 
 export async function listActiveProgrammes() {
   return prisma.programme.findMany({
@@ -18,11 +19,18 @@ export async function listActiveProgrammes() {
 // programme) and for the edit form (must display the student's current
 // programme even if it has since been deactivated).
 export async function listProgrammesForFilter() {
-  return prisma.programme.findMany({
+  const programmes = await prisma.programme.findMany({
     where: { deletedAt: null },
     orderBy: { name: "asc" },
-    select: { id: true, code: true, name: true, isActive: true },
+    select: { id: true, code: true, name: true, isActive: true, creditHourRate: true },
   });
+
+  // creditHourRate is a Prisma Decimal — not plain-object-serializable, so
+  // it can't cross the Server Component → Client Component boundary as-is.
+  return programmes.map((p) => ({
+    ...p,
+    creditHourRate: toNumber(p.creditHourRate) ?? 0,
+  }));
 }
 
 export async function listAcademicYears() {

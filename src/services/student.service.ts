@@ -160,7 +160,11 @@ const studentInclude = { user: true, programme: true } satisfies Prisma.StudentI
 function serializeStudent<T extends StudentWithProgramme>(student: T): Serialized<T> {
   return {
     ...student,
-    programme: { ...student.programme, baseFee: toNumber(student.programme.baseFee) },
+    programme: {
+      ...student.programme,
+      baseFee: toNumber(student.programme.baseFee),
+      creditHourRate: toNumber(student.programme.creditHourRate),
+    },
   } as Serialized<T>;
 }
 
