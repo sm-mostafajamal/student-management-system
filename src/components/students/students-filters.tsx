@@ -65,7 +65,7 @@ export function StudentsFilters({ programmes }: { programmes: ProgrammeOption[] 
         value={searchParams.get("programmeId") ?? "all"}
         onValueChange={(v) => updateParam("programmeId", v === "all" ? null : v)}
       >
-        <SelectTrigger className="w-[220px]">
+        <SelectTrigger className="w-[380px]">
           <SelectValue placeholder="All programmes" />
         </SelectTrigger>
         <SelectContent>

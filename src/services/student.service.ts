@@ -104,13 +104,14 @@ export async function listStudents(query: StudentQueryInput): Promise<PaginatedR
         { user: { email: { contains: query.search, mode: "insensitive" } } },
       ],
     }),
+    
   };
 
   const [items, total] = await Promise.all([
     prisma.student.findMany({
       where,
       include: studentInclude,
-      orderBy: [{ user: { lastName: "asc" } }, { user: { firstName: "asc" } }],
+      orderBy: {createdAt : 'desc'},
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
     }),
