@@ -102,16 +102,16 @@ export default async function FeeStructuresPage({ searchParams }: PageProps) {
       </form>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr className="text-left text-gray-500 dark:text-gray-400">
-              <th className="px-4 py-2 font-medium">Programme</th>
-              <th className="px-4 py-2 font-medium">Year</th>
-              <th className="px-4 py-2 font-medium">Semester</th>
-              <th className="px-4 py-2 font-medium">Category</th>
-              <th className="px-4 py-2 text-right font-medium">Amount</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium text-right">Actions</th>
+              <th className="w-[22%] px-4 py-2 font-medium">Programme</th>
+              <th className="w-[12%] px-4 py-2 font-medium">Year</th>
+              <th className="w-[14%] px-4 py-2 font-medium">Semester</th>
+              <th className="w-[12%] px-4 py-2 font-medium">Category</th>
+              <th className="w-[12%] px-4 py-2 text-right font-medium">Amount</th>
+              <th className="w-[10%] px-4 py-2 font-medium">Status</th>
+              <th className="w-[18%] px-4 py-2 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900">

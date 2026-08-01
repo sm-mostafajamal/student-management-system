@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/session";
-import { AppError } from "@/lib/errors";
+import { AppError, firstZodMessage } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import {
   createFeeStructure,
   listFeeStructures,
   updateFeeStructureAmount,
   deactivateFeeStructure,
+  reactivateFeeStructure,
 } from "@/services/fee-structure.service";
 import {
   assignFeesForStudent,
@@ -53,7 +54,7 @@ export async function createFeeStructureAction(
     if (!parsed.success) {
       return {
         success: false,
-        error: "Please fix the highlighted fields.",
+        error: firstZodMessage(parsed.error),
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -74,7 +75,7 @@ export async function updateFeeStructureAmountAction(
     if (!parsed.success) {
       return {
         success: false,
-        error: "Please fix the highlighted fields.",
+        error: firstZodMessage(parsed.error),
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -97,6 +98,17 @@ export async function deactivateFeeStructureAction(id: string): Promise<ApiResul
   }
 }
 
+export async function reactivateFeeStructureAction(id: string): Promise<ApiResult<{ id: string }>> {
+  try {
+    await assertStaff();
+    const structure = await reactivateFeeStructure(id);
+    revalidatePath("/fees/structures");
+    return { success: true, data: { id: structure.id } };
+  } catch (err) {
+    return toApiResult(err);
+  }
+}
+
 export async function assignFeesToStudentAction(
   input: unknown
 ): Promise<ApiResult<{ created: number; skipped: string[] }>> {
@@ -106,7 +118,7 @@ export async function assignFeesToStudentAction(
     if (!parsed.success) {
       return {
         success: false,
-        error: "Please fix the highlighted fields.",
+        error: firstZodMessage(parsed.error),
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }
@@ -136,7 +148,7 @@ export async function bulkAssignFeesAction(input: unknown): Promise<ApiResult<Bu
     if (!parsed.success) {
       return {
         success: false,
-        error: "Please fix the highlighted fields.",
+        error: firstZodMessage(parsed.error),
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }

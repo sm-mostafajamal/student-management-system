@@ -49,11 +49,10 @@ export function ReversePaymentControl({ payment }: { payment: PaymentLedgerRow }
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="paymentId" value={payment.id} />
-      <input type="hidden" name="studentId" value={payment.studentId} />
       <input
-        name="reason"
+        name="reversalReason"
         required
-        minLength={3}
+        minLength={5}
         placeholder="Reason for reversal (e.g. bounced cheque)"
         className="rounded-md border px-3 py-1.5 text-sm"
       />

@@ -90,7 +90,7 @@ export function FeeStructureForm({
         disabled={isPending}
         className="col-span-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 sm:col-span-5"
       >
-        {isPending ? "Saving..." : "Add / update fee structure"}
+        {isPending ? "Saving..." : "Add fee structure"}
       </button>
       {error && <p className="col-span-2 text-sm text-red-600 dark:text-red-400 sm:col-span-5">{error}</p>}
     </form>

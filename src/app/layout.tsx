@@ -14,13 +14,13 @@
  * children Next.js passes in.
  */
 
+import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { SessionProvider } from "@/components/shared/session-provider";
 import { AppShell } from "@/components/layout/app-shell";
+import { Toaster } from "@/components/ui/sonner";
 import { getSessionUser } from "@/lib/role";
 
 const inter = Inter({
@@ -55,6 +55,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               <>{children}</>
             )}
           </SessionProvider>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
     </html>

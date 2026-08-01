@@ -52,7 +52,7 @@ export async function listFeeStructures(filters: {
   return prisma.feeStructure.findMany({
     where: filters,
     include: { programme: true, academicYear: true },
-    orderBy: [{ academicYear: { startDate: "desc" } }, { category: "asc" }],
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -76,4 +76,8 @@ export async function updateFeeStructureAmount(id: string, amount: number) {
 
 export async function deactivateFeeStructure(id: string) {
   return prisma.feeStructure.update({ where: { id }, data: { isActive: false } });
+}
+
+export async function reactivateFeeStructure(id: string) {
+  return prisma.feeStructure.update({ where: { id }, data: { isActive: true } });
 }

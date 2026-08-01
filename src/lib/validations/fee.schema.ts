@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Semester, FeeCategory, FeeStatus, PaymentMethod } from "@prisma/client";
-import { cuidSchema, moneySchema, nonNegativeMoneySchema } from "./common";
+import { Semester, FeeCategory, PaymentMethod } from "@prisma/client";
+import { cuidSchema, moneySchema } from "./common";
 // import { Semester, FeeCategory, PaymentMethod } from "@/types";
 
 export const createFeeStructureSchema = z.object({
@@ -13,7 +13,7 @@ export const createFeeStructureSchema = z.object({
 
 export const updateFeeStructureAmountSchema = z.object({
   id: z.string().min(1),
-  amount: z.coerce.number().positive().max(10_000_000),
+  amount: moneySchema,
 });
 export const assignFeesSchema = z.object({
   studentId: z.string().min(1),
@@ -55,38 +55,6 @@ export const reversePaymentSchema = z.object({
     .min(5, "Please provide a reason (min 5 characters) — this goes on the audit trail")
     .max(500),
 });
-// Fee (the actual invoice) is normally CREATED by the service layer when a
-// student enrolls — it snapshots FeeStructure.amount into amountDue. This
-// schema covers the rarer case: an ad-hoc fee/fine not tied to a template
-// (feeStructureId omitted), e.g. a library fine.
-export const createFeeSchema = z
-  .object({
-    studentId: cuidSchema,
-    feeStructureId: cuidSchema.optional(),
-    academicYearId: cuidSchema,
-    semester: z.nativeEnum(Semester),
-    category: z.nativeEnum(FeeCategory),
-    amountDue: moneySchema,
-    dueDate: z.coerce.date().optional(),
-  });
-
-export const waiveFeeSchema = z.object({
-  waivedAmount: nonNegativeMoneySchema,
-  waivedReason: z
-    .string()
-    .trim()
-    .min(10, "Provide a substantive reason (min 10 characters) for audit purposes")
-    .max(500),
-});
-// NOTE: "waivedAmount <= amountDue - alreadyPaid" cannot be validated here —
-// it requires reading the Fee row and its Payments. Enforced in
-// fee.service.ts before the update is committed.
-
-export const updateFeeStatusSchema = z.object({
-  status: z.nativeEnum(FeeStatus),
-});
 
 export type CreateFeeStructureInput = z.infer<typeof createFeeStructureSchema>;
-export type CreateFeeInput = z.infer<typeof createFeeSchema>;
-export type WaiveFeeInput = z.infer<typeof waiveFeeSchema>;
 export type ReversePaymentInput = z.infer<typeof reversePaymentSchema>;

@@ -95,6 +95,20 @@ export function fail(
 export function formatZodError(error: ZodError): Record<string, string[]> {
   return error.flatten().fieldErrors as Record<string, string[]>;
 }
+/**
+ * Returns the first real validation message from a ZodError (e.g. "Amount
+ * exceeds allowed maximum") instead of a generic "fix the highlighted
+ * fields" string. Use this for any UI that surfaces errors as a single
+ * message (toast, alert) rather than per-field inline highlighting.
+ */
+export function firstZodMessage(error: ZodError, fallback = "Please check your input."): string {
+  const fieldErrors = error.flatten().fieldErrors as Record<string, string[] | undefined>;
+  for (const key in fieldErrors) {
+    const messages = fieldErrors[key];
+    if (messages && messages.length > 0) return messages[0];
+  }
+  return error.issues[0]?.message ?? fallback;
+}
 
 // ─── Route handler error mapper ───────────────────────────────────────────────
 

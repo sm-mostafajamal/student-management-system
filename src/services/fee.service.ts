@@ -1,6 +1,4 @@
 /**
- * src/services/fee.service.ts
- *
  * Fee & Payment domain service.
  *
  * Key design decisions documented here:
@@ -22,7 +20,7 @@ import { Prisma } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
 import { ok, fail, assertFound, AppError } from "@/lib/errors";
-import { toNumberRequired, toNumber, fromNumber } from "@/lib/decimal";
+import { toNumberRequired, toNumber } from "@/lib/decimal";
 import type {
   ApiResult,
   FeeBalance,
@@ -32,7 +30,6 @@ import type {
 import {
   FeeStatus,
   PaymentStatus,
-  PaymentMethod,
   Semester,
   type FeeCategory,
 } from "@prisma/client";
@@ -41,22 +38,10 @@ import { z } from "zod";
 export class FeeAssignmentError extends Error {}
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
-export const RecordPaymentSchema = z.object({
-  feeId: z.string().cuid(),
-  studentId: z.string().cuid(),
-  amount: z.number().positive(),
-  method: z.nativeEnum(PaymentMethod),
-  reference: z.string().min(1).max(100),
-  paidAt: z.coerce.date().optional(),
-  recordedById: z.string().cuid(),
-});
-
 export const WaiveFeeSchema = z.object({
   waivedAmount: z.number().positive(),
   waivedReason: z.string().min(10).max(500),
 });
-
-export type RecordPaymentInput = z.infer<typeof RecordPaymentSchema>;
 
 /**
  * Bills ONE student for every active FeeStructure matching their programme
@@ -328,87 +313,6 @@ export async function generateFeesFromStructure(opts: {
   } catch (err) {
     console.error("[FeeService.generateFeesFromStructure]", err);
     return fail("Failed to generate fees");
-  }
-}
-
-/**
- * Records a payment against a fee.
- * Checks: fee exists, reference is unique, amount doesn't exceed balance.
- * Updates Fee.status after recording.
- */
-export async function recordPayment(
-  input: RecordPaymentInput
-): Promise<ApiResult<{ paymentId: string }>> {
-  try {
-    const parsed = RecordPaymentSchema.parse(input);
-
-    const fee = await prisma.fee.findUnique({
-      where: { id: parsed.feeId },
-      include: { payments: { where: { status: PaymentStatus.COMPLETED } } },
-    });
-    assertFound(fee, "Fee");
-
-    // Idempotency check — blocks double-submitted payments at service level
-    // (DB unique constraint is the final guard)
-    const duplicate = await prisma.payment.findUnique({
-      where: { reference: parsed.reference },
-    });
-    if (duplicate) {
-      throw new AppError(
-        "PAYMENT_DUPLICATE",
-        `Payment reference "${parsed.reference}" already exists`
-      );
-    }
-
-    const amountDue = toNumberRequired(fee.amountDue);
-    const waivedAmount = toNumberRequired(fee.waivedAmount);
-    const totalPaid = fee.payments.reduce(
-      (sum, p) => sum + toNumberRequired(p.amount),
-      0
-    );
-    const remainingBalance = amountDue - waivedAmount - totalPaid;
-
-    if (parsed.amount > remainingBalance + 0.001) {
-      throw new AppError(
-        "VALIDATION_ERROR",
-        `Payment amount (${parsed.amount}) exceeds outstanding balance (${remainingBalance.toFixed(2)})`
-      );
-    }
-
-    const newTotalPaid = totalPaid + parsed.amount;
-    const newBalance = amountDue - waivedAmount - newTotalPaid;
-    const newStatus: FeeStatus =
-      newBalance <= 0.001
-        ? FeeStatus.PAID
-        : FeeStatus.PARTIALLY_PAID;
-
-    const payment = await prisma.$transaction(async (tx) => {
-      const p = await tx.payment.create({
-        data: {
-          feeId: parsed.feeId,
-          studentId: parsed.studentId,
-          reference: parsed.reference,
-          amount: fromNumber(parsed.amount),
-          method: parsed.method as PaymentMethod,
-          status: PaymentStatus.COMPLETED,
-          paidAt: parsed.paidAt ?? new Date(),
-          recordedById: parsed.recordedById,
-        },
-      });
-
-      await tx.fee.update({
-        where: { id: parsed.feeId },
-        data: { status: newStatus },
-      });
-
-      return p;
-    });
-
-    return ok({ paymentId: payment.id });
-  } catch (err) {
-    if (err instanceof AppError) return err.toApiResult() as ApiResult<never>;
-    console.error("[FeeService.recordPayment]", err);
-    return fail("Failed to record payment");
   }
 }
 

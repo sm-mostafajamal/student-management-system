@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { getSessionUser } from "@/lib/session";
-import { reversePaymentSchema } from "@/lib/validations/payment";
+import { firstZodMessage } from "@/lib/errors";
+import { reversePaymentSchema } from "@/lib/validations/fee.schema";
 import { reversePayment } from "@/services/payment.service";
 import { Role } from "@/types";
 import type { ApiResult } from "@/types";
@@ -19,8 +20,7 @@ export async function reversePaymentAction(
 
   const parsed = reversePaymentSchema.safeParse({
     paymentId: formData.get("paymentId"),
-    studentId: formData.get("studentId"),
-    reason: formData.get("reason"),
+    reversalReason: formData.get("reversalReason"),
   });
 
   if (!parsed.success) {
@@ -40,9 +40,9 @@ export async function reversePaymentAction(
     // a shared DomainError type — it throws a plain Error (already-reversed
     // case) or lets Prisma's findUniqueOrThrow throw a P2025 (not found).
     // Handled explicitly below rather than via a DomainError instanceof check.
-    const payment = await reversePayment(parsed.data.paymentId, user.id, parsed.data.reason);
+    const payment = await reversePayment(parsed.data.paymentId, user.id, parsed.data.reversalReason);
     revalidatePath("/payments");
-    revalidatePath(`/fees/students/${parsed.data.studentId}`);
+    revalidatePath(`/fees/students/${payment.studentId}`);
     return { success: true, data: { id: payment.id } };
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
