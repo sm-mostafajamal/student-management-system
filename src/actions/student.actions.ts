@@ -10,6 +10,7 @@ import {
   type UpdateStudentInput,
 } from "@/lib/validations/student.schema";
 import * as studentService from "@/services/student.service";
+import type { AutoEnrollSummary } from "@/services/student.service";
 import type { ApiResult, StudentWithProgramme, Serialized } from "@/types";
 
 async function assertStaff() {
@@ -30,7 +31,7 @@ function toApiResult<T>(err: unknown): ApiResult<T> {
 
 export async function createStudentAction(
   input: CreateStudentInput
-): Promise<ApiResult<Serialized<StudentWithProgramme>>> {
+): Promise<ApiResult<Serialized<StudentWithProgramme> & { autoEnrollment: AutoEnrollSummary }>> {
   try {
     await assertStaff();
     const parsed = createStudentSchema.safeParse(input);

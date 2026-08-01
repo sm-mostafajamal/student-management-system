@@ -20,7 +20,8 @@ import {
 } from "@/lib/validations/student.schema";
 import { createStudentAction, updateStudentAction } from "@/actions/student.actions";
 import { Gender, StudentStatus } from "@/types";
-import type { StudentWithProgramme } from "@/types";
+import type { AutoEnrollSummary } from "@/services/student.service";
+import type { StudentWithProgramme, Serialized } from "@/types";
 
 interface ProgrammeOption {
   id: string;
@@ -75,6 +76,38 @@ export function StudentForm(props: Props) {
 
       if (result.success) {
         toast.success(isEdit ? "Student updated." : "Student enrolled successfully.");
+
+        if (!isEdit) {
+          // `result.data` is a union across the create/update action return
+          // types, so TS can't narrow it on its own — createStudentAction is
+          // the only branch that ever attaches `autoEnrollment`, and we've
+          // already confirmed `!isEdit` above, so this cast is safe.
+          const createData = result.data as Serialized<StudentWithProgramme> & {
+            autoEnrollment?: AutoEnrollSummary;
+          };
+          const autoEnrollment = createData.autoEnrollment;
+
+          if (autoEnrollment) {
+            const { enrolledCourseCodes, skippedNoOffering, skippedCapacity } = autoEnrollment;
+
+            if (enrolledCourseCodes.length > 0) {
+              toast.info(
+                `Auto-enrolled in ${enrolledCourseCodes.length} programme course(s): ${enrolledCourseCodes.join(", ")}`
+              );
+            }
+            if (skippedNoOffering.length > 0) {
+              toast.warning(
+                `No course offering exists yet for this year for: ${skippedNoOffering.join(", ")}. Create an offering, then enroll the student manually.`
+              );
+            }
+            if (skippedCapacity.length > 0) {
+              toast.warning(
+                `These programme courses are already at capacity: ${skippedCapacity.join(", ")}. Enroll manually once space opens up.`
+              );
+            }
+          }
+        }
+
         router.push("/students");
         router.refresh();
         return;

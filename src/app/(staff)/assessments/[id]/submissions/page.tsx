@@ -23,9 +23,10 @@ export default async function AssessmentSubmissionsPage({
   }
 
   const submissions = await listSubmissionsForAssessment(id, user);
+  const maxScore = Number(assessment.maxScore);
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8">
       <Link
         href="/assessments"
         className="text-sm text-gray-500 hover:underline dark:text-gray-400 pb-4"
@@ -56,7 +57,13 @@ export default async function AssessmentSubmissionsPage({
                 Status
               </th>
               <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                Marks
+              </th>
+              <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 File
+              </th>
+              <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                Actions
               </th>
             </tr>
           </thead>
@@ -76,6 +83,13 @@ export default async function AssessmentSubmissionsPage({
                 <td className="px-4 py-2">
                   <LateBadge isLate={s.isLate} />
                 </td>
+                <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
+                  {s.score != null ? (
+                    `${Number(s.score)} / ${maxScore}`
+                  ) : (
+                    <span className="text-gray-400">Not graded</span>
+                  )}
+                </td>
                 <td className="px-4 py-2">
                   <Link
                     href={`/api/submissions/${s.id}/file`}
@@ -84,12 +98,34 @@ export default async function AssessmentSubmissionsPage({
                     Download
                   </Link>
                 </td>
+                <td className="px-4 py-2">
+                  <div className="flex justify-end gap-3">
+                    {(!assessment.isPublished || s.score == null) ? (
+                      <Link
+                        href={`/assessments/${id}/submissions/${s.id}/grade`}
+                        className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white shadow-sm hover:bg-indigo-500"
+                      >
+                        Mark
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                        Published
+                      </span>
+                    )}
+                    <Link
+                      href={`/assessments/${id}/submissions/${s.id}/history`}
+                      className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900"
+                    >
+                      History
+                    </Link>
+                  </div>
+                </td>
               </tr>
             ))}
             {submissions.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={7}
                   className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
                   No submissions yet.

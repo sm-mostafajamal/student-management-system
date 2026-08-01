@@ -74,14 +74,17 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
           <span className="ml-1 text-red-500">*</span>
         </label>
         <input
-          id="code"
-          name="code"
-          type="text"
-          required
-          defaultValue={programme?.code}
-          placeholder="e.g. CS-BSC"
-          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
-          aria-describedby={fieldError("code") ? "code-error" : undefined}
+        id="code"
+        name="code"
+        type="text"
+        required
+        defaultValue={programme?.code}
+        placeholder="e.g. CS-BSC"
+        className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm uppercase text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        onChange={(e) => {
+            e.target.value = e.target.value.toUpperCase();
+        }}
+        aria-describedby={fieldError("code") ? "code-error" : undefined}
         />
         <FieldError message={fieldError("code")} />
       </div>
@@ -198,7 +201,35 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
         </p>
         <FieldError message={fieldError("baseFee")} />
       </div>
-
+      <div>
+        <label
+          htmlFor="creditHourRate"
+          className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Credit Hour Rate
+          <span className="ml-1 text-xs text-zinc-400">(amount charged per credit hour)</span>
+        </label>
+        <input
+          id="creditHourRate"
+          name="creditHourRate"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={
+            programme && "creditHourRate" in programme
+              ? Number((programme as unknown as { creditHourRate: number }).creditHourRate)
+              : 0
+          }
+          placeholder="0.00"
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+        />
+        <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+          When set above 0, each course's fee for students on this programme is computed as
+          <span className="font-medium"> credit hours × this rate</span>, overriding the course's own flat fee.
+          Leave 0 to keep using each course's flat "Course Fee" as-is.
+        </p>
+        <FieldError message={fieldError("creditHourRate")} />
+      </div>
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"
@@ -220,7 +251,7 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
             ? "Save changes"
             : "Create programme"}
         </button>
-      </div>
+      </div> 
     </form>
   );
 }

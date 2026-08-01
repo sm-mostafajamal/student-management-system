@@ -196,6 +196,13 @@ model Programme {
   /// retroactively alters an already-billed student, same snapshot
   /// discipline as FeeStructure/Fee elsewhere in this file.
   baseFee        Decimal        @default(0) @db.Decimal(10, 2)
+  /// The amount billed per credit hour for this programme. When > 0, a
+  /// course's fee at enrollment time is computed as
+  /// `course.creditHours * this.creditHourRate` for a student on this
+  /// programme, instead of the course's flat `courseFee` — see
+  /// fee.service.ts::assignCourseFeeForEnrollment. Leave at 0 to keep
+  /// using flat per-course fees (the previous/default behaviour).
+  creditHourRate Decimal        @default(0) @db.Decimal(10, 2)
   isActive       Boolean        @default(true)
   deletedAt      DateTime?
   createdAt      DateTime       @default(now())

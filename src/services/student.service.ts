@@ -2,12 +2,12 @@
 // Components call these functions and never touch Prisma directly for
 // anything beyond a trivial read.
 
-import { Prisma, Role } from "@prisma/client";
+import { Prisma, Role, EnrollmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import type { CreateStudentInput, UpdateStudentInput, StudentQueryInput } from "@/lib/validations/student.schema";
 import type { StudentWithProgramme, PaginatedResult, Serialized } from "@/types";
-import { assignProgrammeBaseFee } from "@/services/fee.service";
+import { assignProgrammeBaseFee, assignCourseFeeForEnrollment } from "@/services/fee.service";
 import { toNumber } from "@/lib/decimal";
 
 
@@ -86,6 +86,70 @@ async function generateStudentNumber(tx: Prisma.TransactionClient, admissionYear
 
   return `${prefix}${String(next).padStart(4, "0")}`;
 }
+export interface AutoEnrollSummary {
+  enrolledCourseCodes: string[];
+  skippedNoOffering: string[];
+  skippedCapacity: string[];
+}
+
+/**
+ * Auto-enrolls a newly admitted student into every course that belongs to
+ * their programme ("default courses" — Course.programmeId === the
+ * student's programme) for their admission academic year.
+ *
+ * For each such course, we enroll into every CourseOffering that already
+ * exists for it in that academic year (there may be more than one, e.g.
+ * one per semester). A course with no offering yet for that year is
+ * skipped and reported (not an error — staff simply haven't scheduled it
+ * yet); an offering already at capacity is likewise skipped and reported.
+ * Each successful enrollment immediately bills the course's fee via
+ * assignCourseFeeForEnrollment — same as a manual enrollment.
+ */
+async function autoEnrollDefaultCourses(
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  programmeId: string,
+  academicYearId: string
+): Promise<AutoEnrollSummary> {
+  const courses = await tx.course.findMany({
+    where: { programmeId, isActive: true, deletedAt: null },
+  });
+
+  const enrolledCourseCodes: string[] = [];
+  const skippedNoOffering: string[] = [];
+  const skippedCapacity: string[] = [];
+
+  for (const course of courses) {
+    const offerings = await tx.courseOffering.findMany({
+      where: { courseId: course.id, academicYearId, deletedAt: null },
+    });
+
+    if (offerings.length === 0) {
+      skippedNoOffering.push(course.code);
+      continue;
+    }
+
+    for (const offering of offerings) {
+      if (offering.capacity != null) {
+        const enrolledCount = await tx.enrollment.count({
+          where: { courseOfferingId: offering.id, status: EnrollmentStatus.ENROLLED },
+        });
+        if (enrolledCount >= offering.capacity) {
+          skippedCapacity.push(course.code);
+          continue;
+        }
+      }
+
+      const enrollment = await tx.enrollment.create({
+        data: { studentId, courseOfferingId: offering.id, status: EnrollmentStatus.ENROLLED },
+      });
+      await assignCourseFeeForEnrollment(enrollment.id, tx);
+      enrolledCourseCodes.push(course.code);
+    }
+  }
+
+  return { enrolledCourseCodes, skippedNoOffering, skippedCapacity };
+}
 
 const studentInclude = { user: true, programme: true } satisfies Prisma.StudentInclude;
 
@@ -154,7 +218,9 @@ export async function getStudentById(id: string): Promise<Serialized<StudentWith
 // Mutations
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function createStudent(input: CreateStudentInput): Promise<Serialized<StudentWithProgramme>> {
+export async function createStudent(
+  input: CreateStudentInput
+): Promise<Serialized<StudentWithProgramme> & { autoEnrollment: AutoEnrollSummary }> {
   const email = input.email.toLowerCase().trim();
 
   // Edge case: "Programme no longer active" — fail fast before opening a
@@ -204,12 +270,22 @@ export async function createStudent(input: CreateStudentInput): Promise<Serializ
         include: studentInclude,
       });
 
-      // Bill the programme's base fee immediately on admission (snapshotted
+  // Bill the programme's base fee immediately on admission (snapshotted
       // — a later change to Programme.baseFee never retroactively reprices
       // this student). No-ops cleanly if baseFee is 0.
       await assignProgrammeBaseFee(student.id, tx);
 
-      return serializeStudent(student);
+      // Auto-enroll into the programme's default courses for the admission
+      // year, billing each one, same as if staff manually enrolled the
+      // student in each — see autoEnrollDefaultCourses above.
+      const autoEnrollment = await autoEnrollDefaultCourses(
+        tx,
+        student.id,
+        programme.id,
+        admissionYear.id
+      );
+
+      return { ...serializeStudent(student), autoEnrollment };
     });
   } catch (err) {
     if (err instanceof AppError) throw err;

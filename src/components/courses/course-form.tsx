@@ -152,7 +152,7 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
           Course Fee
-          <span className="ml-1 text-xs text-zinc-400">(billed once per enrolment)</span>
+          <span className="ml-1 text-xs text-zinc-400">(billed once per enrollment)</span>
         </label>
         <input
           id="courseFee"
@@ -163,10 +163,14 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
           defaultValue={course?.courseFee !== undefined ? Number(course.courseFee) : 0}
           placeholder="0.00"
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
+          readOnly
+          disabled
         />
         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
           Leave 0 for courses with no extra charge (e.g. general-education courses).
-          Changing this does not retroactively reprice existing enrolments.
+          Changing this does not retroactively reprice existing enrolments. Note: if the
+          enrolling student's programme has a Credit Hour Rate configured, this flat fee is
+          ignored and <span className="font-medium">credit hours × that rate</span> is billed instead.
         </p>
         <FieldError message={fieldError("courseFee")} />
       </div>

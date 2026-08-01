@@ -216,12 +216,27 @@ export async function assignCourseFeeForEnrollment(
       where: { id: enrollmentId },
       include: {
         courseOffering: { include: { course: true, academicYear: true } },
+        student: { include: { programme: true } },
       },
     });
     assertFound(enrollment, "Enrollment");
 
-    const courseFee = toNumberRequired(enrollment.courseOffering.course.courseFee);
-    if (courseFee <= 0) return ok({ created: false });
+    // "Amount per course by credit hour": if the ENROLLING student's
+    // programme has a creditHourRate configured, the course fee is
+    // computed as creditHours * creditHourRate for that student, rather
+    // than the course's own flat courseFee. This matters for cross-listed
+    // courses (Course.programmeId can be null or differ from the
+    // student's own programme) — the rate that applies is always the
+    // rate of the programme the STUDENT is billed under.
+    // Falls back to the course's flat courseFee when no rate is set (0),
+    // so programmes/courses with no rate configured are unaffected.
+    const creditHourRate = toNumberRequired(enrollment.student.programme.creditHourRate);
+    const computedFee =
+      creditHourRate > 0
+        ? enrollment.courseOffering.course.creditHours * creditHourRate
+        : toNumberRequired(enrollment.courseOffering.course.courseFee);
+
+    if (computedFee <= 0) return ok({ created: false });
 
     try {
       await tx.fee.create({
@@ -231,7 +246,7 @@ export async function assignCourseFeeForEnrollment(
           academicYearId: enrollment.courseOffering.academicYearId,
           semester: enrollment.courseOffering.semester,
           category: FeeCategory.COURSE_FEE,
-          amountDue: enrollment.courseOffering.course.courseFee, // snapshot
+          amountDue: computedFee, // snapshot — computed once, never recomputed later
           dueDate: addDays(new Date(), 30),
         },
       });

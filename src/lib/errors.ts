@@ -197,7 +197,8 @@ export class DomainError extends Error {
       | "WEIGHT_EXCEEDED"
       | "REASON_REQUIRED"
       | "CONFLICT"
-      | "DUPLICATE_EMAIL",
+      | "DUPLICATE_EMAIL"
+      | "VALIDATION_ERROR",
     message: string
   ) {
     super(message);

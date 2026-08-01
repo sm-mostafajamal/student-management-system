@@ -64,6 +64,7 @@ export function StudentsTable({ result }: { result: PaginatedResult<StudentWithP
                 <Button
                   variant="ghost"
                   size="icon"
+                  nativeButton={false}
                   render={<Link href={`/students/${s.id}/edit`} />}
                 >
                   <Pencil className="h-4 w-4" />

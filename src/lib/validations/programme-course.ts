@@ -36,6 +36,7 @@ export const CreateProgrammeSchema = z.object({
     .optional()
     .transform((v) => v?.trim() || undefined),
   baseFee: feeField,
+  creditHourRate: feeField,
 });
 export const UpdateProgrammeSchema = CreateProgrammeSchema.extend({
   id: z.string().cuid("Invalid programme ID"),

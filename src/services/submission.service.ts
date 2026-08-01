@@ -250,3 +250,190 @@ export async function getAuthorizedSubmissionFile(
     mimeType: submission.mimeType ?? "application/octet-stream",
   };
 }
+
+// ─────────────────────────────────────────────
+// STAFF: grade an individual submission
+// ─────────────────────────────────────────────
+
+interface GradeSubmissionParams {
+  submissionId: string;
+  score: number;
+  feedback?: string;
+}
+
+export async function gradeSubmission(
+  params: GradeSubmissionParams,
+  actingUser: SessionUser
+) {
+  if (actingUser.role !== Role.STAFF) {
+    throw new DomainError("FORBIDDEN", "Only staff can grade submissions.");
+  }
+
+  const submission = await prisma.submission.findUnique({
+    where: { id: params.submissionId },
+    include: { assessment: true },
+  });
+  if (!submission) {
+    throw new DomainError("NOT_FOUND", "Submission not found.");
+  }
+
+  const maxScore = Number(submission.assessment.maxScore);
+  if (params.score < 0 || params.score > maxScore) {
+    throw new DomainError("VALIDATION_ERROR", `Score must be between 0 and ${maxScore}.`);
+  }
+  return prisma.submission.update({
+    where: { id: params.submissionId },
+    data: {
+      score: params.score,
+      feedback: params.feedback ?? null,
+      gradedById: actingUser.id,
+      gradedAt: new Date(),
+    },
+  });
+}
+
+/** Fetches one submission with everything the grading page needs to render:
+ * student identity, the assessment it belongs to, and the course/offering
+ * it's under (so the page can link back and show subject context). */
+export async function getSubmissionForGrading(
+  submissionId: string,
+  actingUser: SessionUser
+) {
+  if (actingUser.role !== Role.STAFF) {
+    throw new DomainError("FORBIDDEN", "Only staff can grade submissions.");
+  }
+
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: {
+      student: { include: { user: true } },
+      assessment: {
+        include: { courseOffering: { include: { course: true } } },
+      },
+    },
+  });
+  if (!submission) {
+    throw new DomainError("NOT_FOUND", "Submission not found.");
+  }
+  return submission;
+}
+
+/// Hidden case: "history" here means every PAST attempt (isCurrent: false)
+/// plus the current one for THIS assessment, i.e. what the student
+/// previously submitted/was scored on before their latest resubmission —
+/// exactly what a marker needs before deciding on a fresh mark.
+///
+/// Only PUBLISHED results are shown here — staff shouldn't see withheld/
+/// draft marks surfaced as "history" as if they were finalized results.
+export async function getSubmissionAttemptHistory(
+  submissionId: string,
+  actingUser: SessionUser
+) {
+  if (actingUser.role !== Role.STAFF) {
+    throw new DomainError("FORBIDDEN", "Only staff can view submission history.");
+  }
+
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: {
+      student: { include: { user: true } },
+      assessment: {
+        include: { courseOffering: { include: { course: true } } },
+      },
+    },
+  });
+  if (!submission) {
+    throw new DomainError("NOT_FOUND", "Submission not found.");
+  }
+
+  // Every attempt this student has made on THIS assessment — only
+  // returned at all if the assessment's results have been published.
+  const attempts = submission.assessment.isPublished
+    ? await prisma.submission.findMany({
+        where: { assessmentId: submission.assessmentId, studentId: submission.studentId },
+        orderBy: { attemptNumber: "asc" },
+        include: { gradedBy: true },
+      })
+    : [];
+
+  // Every OTHER assessment's current submission for this student, within
+  // the same course offering ("that subject") — restricted to assessments
+  // whose results have been published.
+  const otherAssessmentSubmissions = await prisma.submission.findMany({
+    where: {
+      studentId: submission.studentId,
+      isCurrent: true,
+      assessmentId: { not: submission.assessmentId },
+      assessment: {
+        courseOfferingId: submission.assessment.courseOfferingId,
+        deletedAt: null,
+        isPublished: true,
+      },
+    },
+    orderBy: { assessment: { dueDate: "asc" } },
+    include: { assessment: true, gradedBy: true },
+  });
+
+  return { submission, attempts, otherAssessmentSubmissions };
+}
+
+/// STAFF marksheet view: for every enrolled student, every current
+/// submission across every assessment in this course offering — the
+/// counterpart to result.service.ts::getMarksheetForCourseOffering, but
+/// showing what was actually SUBMITTED and MARKED per assessment rather
+/// than the single aggregated final Grade.
+export async function listSubmissionMarksheetForCourseOffering(
+  courseOfferingId: string,
+  actingUser: SessionUser
+) {
+  if (actingUser.role !== Role.STAFF) {
+    throw new DomainError("FORBIDDEN", "Only staff can view the marksheet.");
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseOfferingId, status: EnrollmentStatus.ENROLLED },
+    include: { student: { include: { user: true } } },
+    orderBy: { student: { studentNumber: "asc" } },
+  });
+
+  const assessments = await prisma.assessment.findMany({
+    where: { courseOfferingId, deletedAt: null },
+    orderBy: { dueDate: "asc" },
+  });
+
+  const submissions = await prisma.submission.findMany({
+    where: {
+      isCurrent: true,
+      studentId: { in: enrollments.map((e) => e.studentId) },
+      assessmentId: { in: assessments.map((a) => a.id) },
+    },
+  });
+  const byStudentAndAssessment = new Map(
+    submissions.map((s) => [`${s.studentId}:${s.assessmentId}`, s])
+  );
+
+  return enrollments.map((enrollment) => ({
+    studentId: enrollment.studentId,
+    studentNumber: enrollment.student.studentNumber,
+    studentName: `${enrollment.student.user.firstName} ${enrollment.student.user.lastName}`,
+    assessments: assessments.map((assessment) => {
+      const submission = byStudentAndAssessment.get(
+        `${enrollment.studentId}:${assessment.id}`
+      );
+      return {
+        assessmentId: assessment.id,
+        title: assessment.title,
+        maxScore: Number(assessment.maxScore),
+        weightPercentage: Number(assessment.weightPercentage),
+        isPublished: assessment.isPublished,
+        submissionId: submission?.id ?? null,
+        score: submission?.score != null ? Number(submission.score) : null,
+        status: submission?.status ?? null,
+        isLate: submission?.isLate ?? null,
+        submittedAt: submission?.submittedAt ?? null,
+        gradedAt: submission?.gradedAt ?? null,
+        feedback: submission?.feedback ?? null,
+      };
+    }),
+  }));
+}

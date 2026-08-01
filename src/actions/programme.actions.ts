@@ -24,13 +24,14 @@ export async function createProgrammeAction(
 ): Promise<ActionResult<{ id: string }>> {
   await requireStaff();
 
-  const raw = {
+const raw = {
     code: formData.get("code"),
     name: formData.get("name"),
     level: formData.get("level"),
     durationYears: formData.get("durationYears"),
     departmentName: formData.get("departmentName") || undefined,
     baseFee: formData.get("baseFee"),
+    creditHourRate: formData.get("creditHourRate"),
   };
 
   const parsed = CreateProgrammeSchema.safeParse(raw);
@@ -73,6 +74,7 @@ export async function updateProgrammeAction(
     departmentName: formData.get("departmentName") || undefined,
     isActive: formData.get("isActive") === "true",
     baseFee: formData.get("baseFee"),
+    creditHourRate: formData.get("creditHourRate"),
   };
 
   const parsed = UpdateProgrammeSchema.safeParse(raw);
