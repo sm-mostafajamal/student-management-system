@@ -6,6 +6,7 @@ import {
   classifyScore,
   type MarksheetEntry,
   type PublishedResultView,
+  type StudentResultView,
   type SessionUser,
 } from "@/types";
 import type {
@@ -324,43 +325,46 @@ export async function getAssessmentMarksheet(assessmentId: string, actingUser: S
 /// there's genuinely no grade yet, or a grade exists but is withheld, the
 /// student gets the exact same NOT_FOUND — the distinction is not
 /// observable from the student side by design.
-export async function getStudentPublishedResults(
-  studentId: string
-): Promise<PublishedResultView[]> {
+export async function getStudentResults(studentId: string): Promise<StudentResultView[]> {
+  // Every grade that actually exists for this student (numericScore not
+  // null — i.e. staff has recorded something), published or withheld.
+  // Withheld ones are still listed, just with the score/classification
+  // nulled out, so the student sees "something is pending" instead of the
+  // row vanishing with no explanation.
   const grades = await prisma.grade.findMany({
-    where: { studentId, isPublished: true, numericScore: { not: null } },
+    where: { studentId, numericScore: { not: null } },
     include: { courseOffering: { include: { course: true } } },
-    orderBy: { publishedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
-  return grades.map((grade) => {
+  return grades.map((grade): StudentResultView => {
     const numericScore = toNumber(grade.numericScore);
     return {
       gradeId: grade.id,
       courseCode: grade.courseOffering.course.code,
       courseTitle: grade.courseOffering.course.title,
-      numericScore,
-      classification: classifyScore(numericScore),
+      status: grade.isPublished ? "PUBLISHED" : "WITHHELD",
+      numericScore: grade.isPublished ? numericScore : null,
+      classification: grade.isPublished ? classifyScore(numericScore) : null,
       publishedAt: grade.publishedAt,
     };
   });
 }
 
-export async function getStudentPublishedResult(
+export async function getStudentResult(
   gradeId: string,
   studentId: string
-): Promise<PublishedResultView> {
+): Promise<StudentResultView> {
   const grade = await prisma.grade.findUnique({
     where: { id: gradeId },
     include: { courseOffering: { include: { course: true } } },
   });
 
-  if (
-    !grade ||
-    grade.studentId !== studentId ||
-    !grade.isPublished ||
-    grade.numericScore === null
-  ) {
+  // Ownership check stays strict: a grade that doesn't exist, or belongs
+  // to a different student, still 404s identically — no enumeration of
+  // other students' gradeIds. Only the PUBLISHED vs WITHHELD branch below
+  // is now visible to the owning student.
+  if (!grade || grade.studentId !== studentId || grade.numericScore === null) {
     throw new DomainError("NOT_FOUND", "Result not available.");
   }
 
@@ -369,11 +373,11 @@ export async function getStudentPublishedResult(
     gradeId: grade.id,
     courseCode: grade.courseOffering.course.code,
     courseTitle: grade.courseOffering.course.title,
-    numericScore,
-    classification: classifyScore(numericScore),
+    status: grade.isPublished ? "PUBLISHED" : "WITHHELD",
+    numericScore: grade.isPublished ? numericScore : null,
+    classification: grade.isPublished ? classifyScore(numericScore) : null,
     publishedAt: grade.publishedAt,
   };
-  
 }
 
 // ─────────────────────────────────────────────

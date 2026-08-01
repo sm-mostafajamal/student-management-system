@@ -282,3 +282,18 @@ export interface PublishedResultView {
   classification: ResultClassification;
   publishedAt: Date | null;
 }
+
+/// Student-facing result row. Unlike PublishedResultView, this INCLUDES
+/// withheld grades — but numericScore/classification are null whenever
+/// status is "WITHHELD", so the student sees that a result exists and is
+/// pending, without seeing the score or the staff-facing withhold reason
+/// (that reason stays in GradeChangeLog, an internal audit trail only).
+export interface StudentResultView {
+  gradeId: string;
+  courseCode: string;
+  courseTitle: string;
+  status: "PUBLISHED" | "WITHHELD";
+  numericScore: number | null;
+  classification: ResultClassification | null;
+  publishedAt: Date | null;
+}

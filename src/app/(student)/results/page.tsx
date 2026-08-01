@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
-import { getStudentPublishedResults } from "@/services/result.service";
+import { getStudentResults } from "@/services/result.service";
 import { ClassificationBadge } from "@/components/results/ClassificationBadge";
 import { Role } from "@/types";
 
@@ -10,13 +10,13 @@ export default async function StudentResultsPage() {
     redirect("/");
   }
 
-  const results = await getStudentPublishedResults(user.studentId);
+  const results = await getStudentResults(user.studentId);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">My Results</h1>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Only results your registry has published appear here.
+        Results your registry is still finalizing show as "Withheld" until published.
       </p>
 
       <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
@@ -33,7 +33,7 @@ export default async function StudentResultsPage() {
                 Classification
               </th>
               <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
-                Published
+                Status
               </th>
             </tr>
           </thead>
@@ -45,13 +45,25 @@ export default async function StudentResultsPage() {
                   <span className="ml-2 text-gray-500 dark:text-gray-400">{r.courseTitle}</span>
                 </td>
                 <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  {r.numericScore.toFixed(2)}
+                  {r.numericScore !== null ? r.numericScore.toFixed(2) : "—"}
                 </td>
                 <td className="px-4 py-2">
-                  <ClassificationBadge classification={r.classification} />
+                  {r.classification ? (
+                    <ClassificationBadge classification={r.classification} />
+                  ) : (
+                    <span className="text-sm text-gray-400">—</span>
+                  )}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-                  {r.publishedAt?.toLocaleDateString() ?? "—"}
+                <td className="px-4 py-2">
+                  {r.status === "PUBLISHED" ? (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      Published
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                      Withheld
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -61,7 +73,7 @@ export default async function StudentResultsPage() {
                   colSpan={4}
                   className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
-                  No published results yet.
+                  No results recorded yet.
                 </td>
               </tr>
             )}
