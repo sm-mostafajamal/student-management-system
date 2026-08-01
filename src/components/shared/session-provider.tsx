@@ -17,7 +17,7 @@
  * individual pages and their own Server Components.
  */
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Role } from "@prisma/client";
 import type { SessionUser } from "@/types";
@@ -43,6 +43,14 @@ export function SessionProvider({ children, initialUser }: SessionProviderProps)
   const [user, setUser] = useState<SessionUser | null>(initialUser);
   const [isSwitching, setIsSwitching] = useState(false);
 
+  // useState(initialUser) only applies on first mount. If this provider
+  // ever survives a client-side navigation (e.g. a future soft nav path),
+  // this keeps context in sync with whatever the server most recently
+  // read from the cookie, instead of silently going stale.
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
   const switchRole = useCallback(
     async (role: Role, userId?: string) => {
       setIsSwitching(true);
@@ -61,7 +69,6 @@ export function SessionProvider({ children, initialUser }: SessionProviderProps)
         }
 
         setUser(data.data ?? null);
-        // Hard navigate — Server Components re-read the cookie on next request
         router.push("/dashboard");
         router.refresh();
       } catch (err) {

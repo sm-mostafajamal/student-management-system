@@ -10,8 +10,31 @@ interface RosterEnrollment {
   student: {
     id: string;
     status: string;
+    studentNumber: string;
     user: { firstName: string; lastName: string; email: string };
   };
+}
+
+// Visual language for enrollment status — distinct from Student.status.
+// ENROLLED = active seat. DROPPED/COMPLETED/FAILED = inactive, kept for history.
+const STATUS_STYLES: Record<string, string> = {
+  ENROLLED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+  DROPPED: "bg-muted text-muted-foreground",
+  COMPLETED: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  FAILED: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium " +
+        (STATUS_STYLES[status] ?? "bg-muted text-muted-foreground")
+      }
+    >
+      {status}
+    </span>
+  );
 }
 
 function DropButton() {
@@ -36,17 +59,23 @@ function DropRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [state, formAction] = useActionState(dropEnrollmentAction, null);
+  const canDrop = enrollment.status === "ENROLLED";
 
   return (
     <>
       <tr className="border-t">
         <td className="p-3">
+          <div className="font-medium">{enrollment.student.studentNumber} </div>
+        </td>
+        <td className="p-3">
           <div className="font-medium">{enrollment.student.user.firstName} {enrollment.student.user.lastName}</div>
           <div className="text-xs text-muted-foreground">{enrollment.student.user.email}</div>
         </td>
-        <td className="p-3 text-sm">{enrollment.status}</td>
+        <td className="p-3 text-sm">
+          <StatusBadge status={enrollment.status} />
+        </td>
         <td className="p-3 text-right">
-          {!expanded && (
+          {canDrop && !expanded && (
             <button
               type="button"
               onClick={() => setExpanded(true)}
@@ -57,7 +86,7 @@ function DropRow({
           )}
         </td>
       </tr>
-      {expanded && (
+      {canDrop && expanded && (
         <tr className="border-t bg-muted/30">
           <td colSpan={3} className="p-3">
             <form action={formAction} className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -117,6 +146,7 @@ export function RosterTable({
     <table className="w-full overflow-hidden rounded-md border text-left">
       <thead className="bg-muted/50">
         <tr>
+          <th className="p-3 text-sm font-medium">Student ID</th>
           <th className="p-3 text-sm font-medium">Student</th>
           <th className="p-3 text-sm font-medium">Status</th>
           <th className="p-3" />

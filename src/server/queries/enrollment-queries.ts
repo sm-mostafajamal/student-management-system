@@ -20,19 +20,19 @@ export async function getOfferingRoster(courseOfferingId: string) {
     include: {
       course: { select: { code: true, title: true } },
       enrollments: {
-        where: { status: { not: "DROPPED" } },
         include: {
           student: {
             select: {
               id: true,
               status: true,
+              studentNumber : true,
+
               user: { select: { firstName: true, lastName: true, email: true } },
             },
           },
         },
         orderBy: { createdAt: "asc" },
       },
-      _count: { select: { enrollments: true } },
     },
   });
 }

@@ -13,7 +13,14 @@ import { z } from "zod";
 
 
 export const EnrollStudentSchema = z.object({
-  studentId: z.string().cuid(),
+  // This is the human-facing Student ID staff type in (e.g. "SMS-2025-0001"),
+  // matching Student.studentNumber — NOT the internal Student.id (cuid) PK.
+  // Registry staff know the printed/assigned student number, not a database key.
+  studentId: z
+    .string()
+    .trim()
+    .min(1, "Student ID is required.")
+    .transform((s) => s.toUpperCase()),
   courseOfferingId: z.string().cuid(),
 });
 
@@ -24,7 +31,7 @@ export type EnrollStudentInput = z.infer<typeof EnrollStudentSchema>;
  * Enrolls a student in a course offering.
  *
  * Guards:
- * 1. Student exists and is ENROLLED
+ * 1. Student exists (looked up by studentNumber) and is ENROLLED
  * 2. Offering exists and is not deleted
  * 3. Student not already enrolled (or previously dropped — allows re-enroll)
  * 4. Capacity not exceeded
@@ -37,7 +44,10 @@ export async function enrollStudent(
 
     const [student, offering] = await Promise.all([
       prisma.student.findFirst({
-        where: { id: parsed.studentId, deletedAt: null },
+        // studentId here is the human-readable student number typed by
+        // staff (e.g. "SMS-2025-0001"), so look up by studentNumber —
+        // never by id, which is the internal cuid PK the UI never exposes.
+        where: { studentNumber: parsed.studentId, deletedAt: null },
       }),
       prisma.courseOffering.findFirst({
         where: { id: parsed.courseOfferingId, deletedAt: null },
@@ -59,7 +69,7 @@ export async function enrollStudent(
     const existing = await prisma.enrollment.findUnique({
       where: {
         studentId_courseOfferingId: {
-          studentId: parsed.studentId,
+          studentId: student.id,
           courseOfferingId: parsed.courseOfferingId,
         },
       },
@@ -104,7 +114,7 @@ export async function enrollStudent(
 
     const enrollment = await prisma.enrollment.create({
       data: {
-        studentId: parsed.studentId,
+        studentId: student.id,
         courseOfferingId: parsed.courseOfferingId,
         status: EnrollmentStatus.ENROLLED,
       },

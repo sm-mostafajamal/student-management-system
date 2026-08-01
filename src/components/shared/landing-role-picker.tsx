@@ -6,13 +6,11 @@
  */
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { GraduationCap, Users, ChevronRight, Loader2 } from "lucide-react";
 import { Role } from "@prisma/client";
 import { ThemeToggle } from "./theme-toggle";
 
 export function LandingRolePicker() {
-  const router = useRouter();
   const [loading, setLoading] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,8 +32,14 @@ export function LandingRolePicker() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // Hard navigation, not router.push(). SessionProvider only reads its
+      // initialUser prop on mount, and a client-side push/refresh doesn't
+      // remount it — the sidebar would stay hidden until a manual reload.
+      // A full navigation forces RootLayout to re-run on the server with
+      // the cookie that was just set, so SessionProvider mounts correct
+      // the first time.
+      window.location.href = "/dashboard";
+      return;
     } catch {
       setError("Network error. Please check the server is running.");
     } finally {

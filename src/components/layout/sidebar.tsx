@@ -39,7 +39,7 @@ const ICON_MAP: Record<IconName, React.ComponentType<LucideProps>> = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, isStaff, switchRole, isSwitching } = useSession();
+  const { user, isStaff, switchRole, isSwitching, signOut } = useSession();
 
   if (!user) return null;
 
@@ -50,16 +50,25 @@ export function Sidebar() {
       flex h-full w-64 flex-col
       border-r border-border bg-card
     ">
-      {/* Brand */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+      {/* Brand — click to return to the landing role-picker (fresh start) */}
+      <button
+        type="button"
+        onClick={() => signOut()}
+        className="
+          flex h-16 w-full items-center gap-2 px-6 border-b border-border
+          text-left hover:bg-accent/50 transition-colors
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset
+        "
+        aria-label="PEN Global — return to start"
+      >
+        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
           <GraduationCap className="h-4 w-4 text-primary-foreground" />
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground leading-none">PEN Global</p>
           <p className="text-xs text-muted-foreground mt-0.5">Registry System</p>
         </div>
-      </div>
+      </button>
 
       {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">

@@ -4,17 +4,21 @@ import { EnrollStudentForm } from "./enroll-student-form";
 import { RosterTable } from "./roster-table";
 
 interface PageProps {
-  searchParams: Promise<{ offeringId: string }>;
+  params: Promise<{ offeringId: string }>;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function OfferingEnrollmentsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const offering = await getOfferingRoster(params.offeringId);
+export default async function OfferingEnrollmentsPage({ params }: PageProps) {
+  const { offeringId } = await params;
+  const offering = await getOfferingRoster(offeringId);
   if (!offering) notFound();
 
-  const seatsTaken = offering._count.enrollments;
+  // "Seats taken" for capacity purposes only counts ENROLLED — matching the
+  // same rule enforced server-side in enrollStudent(). DROPPED/COMPLETED/
+  // FAILED enrollments don't occupy a seat but still belong on the roster.
+  const seatsTaken = offering.enrollments.filter((e) => e.status === "ENROLLED").length;
+  const totalOnRoster = offering.enrollments.length;
   const atCapacity = seatsTaken >= (offering?.capacity ?? 0);
 
   return (
@@ -35,7 +39,7 @@ export default async function OfferingEnrollmentsPage({ searchParams }: PageProp
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">Current roster ({seatsTaken})</h2>
+        <h2 className="mb-3 text-lg font-medium">Current roster ({totalOnRoster})</h2>
         <RosterTable courseOfferingId={offering.id} enrollments={offering.enrollments} />
       </section>
     </div>
