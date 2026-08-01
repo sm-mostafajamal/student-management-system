@@ -6,6 +6,7 @@ import { CreateProgrammeSchema, UpdateProgrammeSchema } from "@/lib/validations/
 import {
   createProgramme,
   updateProgramme,
+  setProgrammeStatus,
   ServiceError,
 } from "@/services/programme.service";
 import { requireStaff } from "@/lib/auth-helpers";
@@ -97,6 +98,34 @@ export async function updateProgrammeAction(
       return { success: false, error: err.message, field: err.field };
     }
     console.error("[updateProgrammeAction]", err);
+    return { success: false, error: "Something went wrong. Please try again." };
+  }
+}
+// ─── Toggle status (deactivate / reactivate) ──────────────────────────────────
+
+export async function toggleProgrammeStatusAction(
+  _prev: ActionResult<{ id: string; isActive: boolean }> | null,
+  formData: FormData
+): Promise<ActionResult<{ id: string; isActive: boolean }>> {
+  await requireStaff();
+
+  const id = formData.get("id");
+  const isActive = formData.get("isActive") === "true";
+
+  if (typeof id !== "string" || !id) {
+    return { success: false, error: "Missing programme id." };
+  }
+
+  try {
+    const programme = await setProgrammeStatus(id, isActive);
+    revalidatePath("/programmes");
+    revalidatePath(`/programmes/${id}`);
+    return { success: true, data: { id: programme.id, isActive: programme.isActive } };
+  } catch (err) {
+    if (err instanceof ServiceError) {
+      return { success: false, error: err.message, field: err.field };
+    }
+    console.error("[toggleProgrammeStatusAction]", err);
     return { success: false, error: "Something went wrong. Please try again." };
   }
 }

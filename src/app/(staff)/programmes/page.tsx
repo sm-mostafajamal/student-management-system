@@ -4,6 +4,7 @@ import { listProgrammes } from "@/services/programme.service";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Pagination } from "@/components/ui/pagination";
 import { requireStaff } from "@/lib/auth-helpers";
+import { DeactivateProgrammeButton } from "@/components/programmes/deactivate-programme-button";
 
 interface PageProps {
   searchParams: Promise<{ page?: string; search?: string; showInactive?: string }>;
@@ -125,13 +126,23 @@ export default async function ProgrammesPage({ searchParams }: PageProps) {
                   <td className="px-4 py-3">
                     <StatusBadge active={prog.isActive} />
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/programmes/${prog.id}`}
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                    >
-                      View
-                    </Link>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <DeactivateProgrammeButton
+                        programme={{
+                          id: prog.id,
+                          code: prog.code,
+                          name: prog.name,
+                          isActive: prog.isActive,
+                        }}
+                      />
+                      <Link
+                        href={`/programmes/${prog.id}`}
+                        className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                      >
+                        View
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -191,3 +191,35 @@ export async function updateProgramme(input: UpdateProgrammeInput) {
     throw err;
   }
 }
+
+export async function setProgrammeStatus(id: string, isActive: boolean) {
+  // Edge-case guard: prevent deactivating if students are actively enrolled
+  if (isActive === false) {
+    const activeEnrolments = await prisma.student.count({
+      where: { programme: { id }, status: "ENROLLED" },
+    });
+    if (activeEnrolments > 0) {
+      throw new ServiceError(
+        `Cannot deactivate this programme — ${activeEnrolments} student(s) are currently enrolled. ` +
+          "Transfer or graduate all active students first.",
+        "HAS_ACTIVE_STUDENTS"
+      );
+    }
+  }
+
+  try {
+    const programme = await prisma.programme.update({
+      where: { id },
+      data: { isActive },
+    });
+    return serializeProgramme(programme);
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2025"
+    ) {
+      throw new ServiceError("Programme not found.", "NOT_FOUND");
+    }
+    throw err;
+  }
+}

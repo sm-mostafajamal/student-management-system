@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { updateProgrammeAction } from "@/actions/programme.actions";
+import { toggleProgrammeStatusAction } from "@/actions/programme.actions";
 
 interface Props {
   programme: { id: string; code: string; name: string; isActive: boolean };
@@ -18,16 +19,14 @@ export function DeactivateProgrammeButton({ programme }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleToggle = () => {
+ const handleToggle = () => {
     setError(null);
     startTransition(async () => {
       const fd = new FormData();
       fd.set("id", programme.id);
-      fd.set("code", programme.code);
-      fd.set("name", programme.name);
       fd.set("isActive", String(!programme.isActive));
 
-      const result = await updateProgrammeAction(null, fd);
+      const result = await toggleProgrammeStatusAction(null, fd);
       if (result.success) {
         setConfirming(false);
       } else {
