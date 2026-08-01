@@ -10,6 +10,15 @@ export default async function MyFeesPage() {
   const fees = await prisma.fee.findMany({
     where: { studentId: user.studentId },
     orderBy: { createdAt: "desc" },
+    include: {
+      enrollment: {
+        include: {
+          courseOffering: {
+            include: { course: true },
+          },
+        },
+      },
+    },
   });
   const balanceResults = await Promise.all(fees.map((f) => computeFeeBalance(f.id)));
   const balances = balanceResults.map((r) =>
@@ -61,7 +70,15 @@ export default async function MyFeesPage() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{fee.category.replace("_", " ")}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {fee.category.replace("_", " ")}
+                    {fee.enrollment?.courseOffering?.course && (
+                      <span className="ml-1.5 font-normal text-gray-500 dark:text-gray-400">
+                        — {fee.enrollment.courseOffering.course.code} ·{" "}
+                        {fee.enrollment.courseOffering.course.title}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {fee.semester.replace("_", " ")} · Due
                     {fee.dueDate ? new Date(fee.dueDate).toLocaleDateString() : "N/A"}
