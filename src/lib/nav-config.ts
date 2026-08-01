@@ -104,6 +104,12 @@ export const NAV_CONFIG: NavSection[] = [
         icon: "Award",
         roles: [Role.STAFF],
       },
+      {
+        label: "Transcript",
+        href: "/transcript",
+        icon: "BarChart2",
+        roles: [Role.STAFF],
+      },
     ],
   },
   {

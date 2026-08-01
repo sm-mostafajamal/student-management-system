@@ -27,7 +27,11 @@ export default async function FeeStructuresPage({ searchParams }: PageProps) {
       ...(status === "active" ? { isActive: true } : {}),
       ...(status === "inactive" ? { isActive: false } : {}),
     }),
-    prisma.programme.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+        prisma.programme.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true },
+    }),
     prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
   ]);
 

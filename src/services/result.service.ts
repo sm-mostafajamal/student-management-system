@@ -262,7 +262,60 @@ export async function getMarksheetForCourseOffering(
     };
   });
 }
+// ─────────────────────────────────────────────
+// STAFF: single-assessment marksheet (only this assessment's students)
+// ─────────────────────────────────────────────
 
+export async function getAssessmentMarksheet(assessmentId: string, actingUser: SessionUser) {
+  requireStaff(actingUser);
+
+  const assessment = await prisma.assessment.findFirst({
+    where: { id: assessmentId, deletedAt: null },
+    include: { courseOffering: { include: { course: true } } },
+  });
+  if (!assessment) {
+    throw new DomainError("NOT_FOUND", "Assessment not found.");
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseOfferingId: assessment.courseOfferingId, status: EnrollmentStatus.ENROLLED },
+    include: { student: { include: { user: true } } },
+    orderBy: { student: { studentNumber: "asc" } },
+  });
+
+  const submissions = await prisma.submission.findMany({
+    where: {
+      assessmentId,
+      isCurrent: true,
+      studentId: { in: enrollments.map((e) => e.studentId) },
+    },
+  });
+  const byStudentId = new Map(submissions.map((s) => [s.studentId, s]));
+
+  return {
+    assessment: {
+      id: assessment.id,
+      title: assessment.title,
+      maxScore: toNumber(assessment.maxScore),
+      weightPercentage: toNumber(assessment.weightPercentage),
+      courseCode: assessment.courseOffering.course.code,
+      courseTitle: assessment.courseOffering.course.title,
+    },
+    rows: enrollments.map((e) => {
+      const s = byStudentId.get(e.studentId);
+      return {
+        studentId: e.studentId,
+        studentNumber: e.student.studentNumber,
+        studentName: `${e.student.user.firstName} ${e.student.user.lastName}`,
+        submissionId: s?.id ?? null,
+        score: s?.score != null ? toNumber(s.score) : null,
+        status: s?.status ?? null,
+        isLate: s?.isLate ?? null,
+        submittedAt: s?.submittedAt ?? null,
+      };
+    }),
+  };
+}
 // ─────────────────────────────────────────────
 // STUDENT: published-only access
 // ─────────────────────────────────────────────

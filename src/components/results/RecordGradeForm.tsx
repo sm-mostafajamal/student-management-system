@@ -79,6 +79,11 @@ export function RecordGradeForm({
         </div>
       )}
 
+        {state && state.success && (
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          Score saved. Click "Publish" above to make it visible to the student.
+        </p>
+      )}
       {state && !state.success && (
         <div className="text-sm text-red-600 dark:text-red-400 space-y-1">
           <p>{state.error}</p>

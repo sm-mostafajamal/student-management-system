@@ -11,6 +11,7 @@ import { Role } from "@prisma/client";
 import { getNavSectionsForRole } from "@/lib/nav-config";
 import { useSession } from "@/components/shared/session-provider";
 import { cn } from "@/lib/utils";
+import { SidebarUserSwitcher } from "./sidebar-user-switcher";
 
 // Maps icon name strings (from nav-config) to Lucide components.
 // Open/Closed: add a new icon here without changing any nav rendering logic.
@@ -111,60 +112,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer: user info + role switcher */}
-      <div className="border-t border-border p-4 space-y-3">
-        {/* Current user */}
-        <div className="flex items-center gap-3 px-1">
-          <div className={cn(
-            "h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold",
-            isStaff
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"
-          )}>
-            {user.firstName[0]}{user.lastName[0]}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user.firstName} {user.lastName}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-          </div>
-        </div>
-
-        {/* Role toggle — demo only */}
-        <div className="rounded-md border border-border p-2 bg-muted/40">
-          <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
-            Demo: Switch Role
-          </p>
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => !isSwitching && switchRole(Role.STAFF)}
-              disabled={isSwitching || user.role === Role.STAFF}
-              className={cn(
-                "flex-1 rounded px-2 py-1 text-xs font-medium transition-colors",
-                user.role === Role.STAFF
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:text-foreground border border-border",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              Staff
-            </button>
-            <button
-              onClick={() => !isSwitching && switchRole(Role.STUDENT)}
-              disabled={isSwitching || user.role === Role.STUDENT}
-              className={cn(
-                "flex-1 rounded px-2 py-1 text-xs font-medium transition-colors",
-                user.role === Role.STUDENT
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background text-muted-foreground hover:text-foreground border border-border",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              Student
-            </button>
-          </div>
-        </div>
+    {/* Footer: click your name to switch into another staff/student session */}
+      <div className="border-t border-border p-4">
+        <SidebarUserSwitcher />
       </div>
     </aside>
   );

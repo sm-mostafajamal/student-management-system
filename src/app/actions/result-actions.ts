@@ -36,7 +36,7 @@ export async function recordGradeAction(
 
   try {
     const grade = await recordGrade(parsed.data, user);
-    revalidatePath(`/assessments/${parsed.data.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${parsed.data.courseOfferingId}/marksheet`);
     return { success: true, data: { id: grade.id } };
   } catch (err) {
     if (err instanceof DomainError) {
@@ -62,7 +62,7 @@ export async function publishResultAction(
 
   try {
     const grade = await publishResult(parsed.data, user);
-    revalidatePath(`/assessments/${grade.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${grade.courseOfferingId}/marksheet`);
     revalidatePath("/results");
     return { success: true, data: { id: grade.id } };
   } catch (err) {
@@ -96,7 +96,7 @@ export async function unpublishResultAction(
 
   try {
     const grade = await unpublishResult(parsed.data, user);
-    revalidatePath(`/assessments/${grade.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${grade.courseOfferingId}/marksheet`);
     revalidatePath("/results");
     return { success: true, data: { id: grade.id } };
   } catch (err) {

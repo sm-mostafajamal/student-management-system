@@ -15,6 +15,7 @@ export interface AssessmentListRow {
   title: string;
   type: AssessmentType;
   dueDate: Date;
+  gracePeriodMinutes: number;
   courseOfferingId: string;
   courseCode: string;
   courseTitle: string;
@@ -44,7 +45,7 @@ export async function listAssessments(
       courseOffering: { include: { course: { include: { programme: true } } } },
       submissions: {
         where: { isCurrent: true },
-        select: { isLate: true, gradedAt: true },
+        select: { isLate: true, gradedAt: true   },
       },
     },
     orderBy: { dueDate: "desc" },
@@ -64,6 +65,7 @@ export async function listAssessments(
       title: a.title,
       type: a.type,
       dueDate: a.dueDate,
+      gracePeriodMinutes: a.gracePeriodMinutes,
       courseOfferingId: a.courseOfferingId,
       courseCode: a.courseOffering.course.code,
       courseTitle: a.courseOffering.course.title,

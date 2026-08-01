@@ -70,7 +70,7 @@ export default async function GradesIndexPage() {
                   <td className="p-3 text-right">
                     {/* See assumptions section re: [id] = courseOfferingId */}
                     <Link
-                      href={`/assessments/${o.id}/marksheet`}
+                      href={`/course-offerings/${o.id}/marksheet`}
                       className="text-sm font-medium hover:underline"
                     >
                       Open marksheet

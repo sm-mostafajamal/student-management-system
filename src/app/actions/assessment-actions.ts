@@ -92,8 +92,9 @@ export async function updateAssessmentAction(
     const assessment = await updateAssessment(assessmentId, parsed.data, user);
     revalidatePath(`/assessments/${assessmentId}/edit`);
     revalidatePath(`/assessments/${assessmentId}/submissions`);
-    revalidatePath(`/assessments/${assessment.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${assessment.courseOfferingId}/marksheet`);
     revalidatePath("/assessments");
+    revalidatePath(`/assessments/${assessmentId}/marksheet`);
     return { success: true, data: { id: assessment.id } };
   } catch (err) {
     if (err instanceof DomainError) {
@@ -120,8 +121,9 @@ export async function deactivateAssessmentAction(
 
   try {
     const assessment = await deactivateAssessment(assessmentId, user);
-    revalidatePath(`/assessments/${assessment.courseOfferingId}/marksheet`);
+    revalidatePath(`/course-offerings/${assessment.courseOfferingId}/marksheet`);
     revalidatePath("/assessments");
+    revalidatePath(`/assessments/${assessmentId}/marksheet`);
     return { success: true, data: { id: assessment.id } };
   } catch (err) {
     if (err instanceof DomainError) {

@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DueDateGraceField } from "./DueDateGraceField";
 
 interface EditAssessmentFormProps {
   assessment: {
@@ -34,11 +35,6 @@ interface EditAssessmentFormProps {
   hasSubmissions: boolean;
 }
 
-function toLocalDateTimeInputValue(date: Date): string {
-  // datetime-local inputs need "YYYY-MM-DDTHH:mm" in local time, not ISO/UTC.
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
-}
 
 export function EditAssessmentForm({ assessment, hasSubmissions }: EditAssessmentFormProps) {
   const [state, formAction, isPending] = useActionState(updateAssessmentAction, null);
@@ -134,54 +130,28 @@ export function EditAssessmentForm({ assessment, hasSubmissions }: EditAssessmen
           </p>
         )}
 
-        <div>
-          <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Due date
-          </label>
-          <input
-            id="dueDate"
-            name="dueDate"
-            type="datetime-local"
-            defaultValue={toLocalDateTimeInputValue(assessment.dueDate)}
-            required
-            className={inputClass}
-          />
-          {state && !state.success && state.fieldErrors?.dueDate && (
-            <p className="mt-1 text-sm text-red-600">{state.fieldErrors.dueDate[0]}</p>
-          )}
-        </div>
+        <DueDateGraceField
+        defaultDueDate={assessment.dueDate}
+        defaultGracePeriodMinutes={assessment.gracePeriodMinutes}
+        dueDateError={state && !state.success ? state.fieldErrors?.dueDate?.[0] : undefined}
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="gracePeriodMinutes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Grace period (minutes)
-            </label>
-            <input
-              id="gracePeriodMinutes"
-              name="gracePeriodMinutes"
-              type="number"
-              min={0}
-              defaultValue={assessment.gracePeriodMinutes}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="maxAttempts" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Max attempts
-            </label>
-            <input
-              id="maxAttempts"
-              name="maxAttempts"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={assessment.maxAttempts}
-              className={inputClass}
-            />
-          </div>
+        <div>
+        <label
+            htmlFor="maxAttempts"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+            Max attempts
+        </label>
+        <input
+            id="maxAttempts"
+            name="maxAttempts"
+            type="number"
+            min={1}
+            max={10}
+            defaultValue={assessment.maxAttempts}
+            className={inputClass}
+        />
         </div>
 
         {state && !state.success && !state.fieldErrors && (

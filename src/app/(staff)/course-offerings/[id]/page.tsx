@@ -129,7 +129,7 @@ export default async function OfferingDetailPage({ params }: PageProps) {
         </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Create an assessment (title, type, deadline) for this offering, or view all
-          assessments and marksheets on the
+          assessments and marksheets on the 
           <Link href="/assessments" className="text-indigo-600 hover:underline dark:text-indigo-400">
             Assessments
           </Link>

@@ -10,6 +10,7 @@ import {
   type AssessmentStatusFilter,
 } from "@/server/queries/assessment-queries";
 import { AssessmentFilters } from "./assessment-filters";
+import { LiveStatusBadge } from "@/components/assessments/LiveStatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -119,15 +120,7 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
                   <td className="p-3">{a.dueDate.toLocaleDateString()}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap items-center gap-1">
-                      <span
-                        className={
-                          a.isOpen
-                            ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
-                            : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                        }
-                      >
-                        {a.isOpen ? "Open" : "Closed"}
-                      </span>
+                      <LiveStatusBadge dueDate={a.dueDate} gracePeriodMinutes={a.gracePeriodMinutes} />
                       {a.ungradedLateCount > 0 && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                           {a.ungradedLateCount} late submission
@@ -139,11 +132,11 @@ export default async function AssessmentsIndexPage({ searchParams }: PageProps) 
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-3">
                       {/* See assumptions section: [id] here is courseOfferingId — verify against your marksheet route */}
-                      <Link
-                        href={`/assessments/${a.courseOfferingId}/marksheet`}
-                        className="text-sm font-medium hover:underline"
-                      >
-                        Marksheet
+                    <Link
+                      href={`/course-offerings/${a.courseOfferingId}/marksheet`}
+                      className="text-sm font-medium hover:underline"
+                    >
+                       Open marksheet
                       </Link>
                       <Link
                         href={`/assessments/${a.id}/submissions`}

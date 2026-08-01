@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session";
 import { Role } from "@/types";
 import { getAssessmentForStudent } from "@/server/queries/student-assessment-queries";
 import { SubmissionForm } from "./submission-form";
+import { LiveStatusBadge } from "@/components/assessments/LiveStatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -70,17 +71,7 @@ export default async function StudentAssessmentPage({ params }: PageProps) {
         </div>
         <div>
           <p className="text-muted-foreground">Status</p>
-          <p className="font-medium">
-            <span
-              className={
-                !isPastDeadline
-                  ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
-                  : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-              }
-            >
-              {!isPastDeadline ? "Open" : "Closed"}
-            </span>
-          </p>
+          <LiveStatusBadge dueDate={assessment.dueDate} gracePeriodMinutes={assessment.gracePeriodMinutes} />
         </div>
       </div>
 
