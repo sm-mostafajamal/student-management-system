@@ -1,15 +1,13 @@
 // All Student business logic lives here. Server Actions and Server
 // Components call these functions and never touch Prisma directly for
 // anything beyond a trivial read.
-
-import { Prisma, Role, EnrollmentStatus } from "@prisma/client";
+import { Prisma, Role, EnrollmentStatus, Semester } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import type { CreateStudentInput, UpdateStudentInput, StudentQueryInput } from "@/lib/validations/student.schema";
 import type { StudentWithProgramme, PaginatedResult, Serialized } from "@/types";
-import { assignProgrammeBaseFee, assignCourseFeeForEnrollment } from "@/services/fee.service";
 import { toNumber } from "@/lib/decimal";
-
+import { assignProgrammeBaseFee, assignCourseFeeForEnrollment, generateFeesFromStructure } from "@/services/fee.service";
 
 async function assertEmailAvailable(
   tx: Prisma.TransactionClient,
@@ -227,6 +225,7 @@ export async function createStudent(
 ): Promise<Serialized<StudentWithProgramme> & { autoEnrollment: AutoEnrollSummary }> {
   const email = input.email.toLowerCase().trim();
 
+  
   // Edge case: "Programme no longer active" — fail fast before opening a
   // transaction, with a message that names the programme (not a generic
   // "invalid input").
@@ -257,7 +256,7 @@ export async function createStudent(
         data: {
           studentNumber,
           programme: { connect: { id: programme.id } },
-          admissionAcademicYearId: admissionYear.id,
+          admissionAcademicYear: { connect: { id: admissionYear.id } },
           dateOfBirth: input.dateOfBirth,
           gender: input.gender,
           phone: input.phone || null,
@@ -278,7 +277,20 @@ export async function createStudent(
       // — a later change to Programme.baseFee never retroactively reprices
       // this student). No-ops cleanly if baseFee is 0.
       await assignProgrammeBaseFee(student.id, tx);
-
+      // Bill every active FeeStructure row (TUITION, LIBRARY, EXAMINATION,
+      // etc.) defined for this programme/admission-year/first-semester.
+      // Without this, structures created on /fees/structures never reach
+      // newly admitted students — they'd sit unbilled until staff manually
+      // clicked "assign fees" on the student's fee page.
+      await generateFeesFromStructure(
+        {
+          studentId: student.id,
+          programmeId: programme.id,
+          academicYearId: admissionYear.id,
+          semester: Semester.FIRST_SEMESTER,
+        },
+        tx
+      );
       // Auto-enroll into the programme's default courses for the admission
       // year, billing each one, same as if staff manually enrolled the
       // student in each — see autoEnrollDefaultCourses above.

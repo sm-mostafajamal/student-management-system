@@ -42,12 +42,17 @@ export class ServiceError extends Error {
 // cross the Server Component → Client Component boundary (or a Server
 // Action's return value) as-is. Every read/write path below converts them
 // to plain numbers before returning.
-function serializeProgramme<T extends { baseFee: Prisma.Decimal; courses?: Array<{ courseFee: Prisma.Decimal }> }>(
-  programme: T
-) {
+function serializeProgramme<
+  T extends {
+    baseFee: Prisma.Decimal;
+    creditHourRate: Prisma.Decimal;
+    courses?: Array<{ courseFee: Prisma.Decimal }>;
+  }
+>(programme: T) {
   return {
     ...programme,
     baseFee: toNumber(programme.baseFee)!,
+    creditHourRate: toNumber(programme.creditHourRate)!,
     ...(programme.courses && {
       courses: programme.courses.map((c) => ({ ...c, courseFee: toNumber(c.courseFee)! })),
     }),

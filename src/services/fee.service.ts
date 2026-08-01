@@ -283,7 +283,7 @@ export async function getStudentFeeBreakdown(studentId: string) {
   try {
     const student = await prisma.student.findUnique({
       where: { id: studentId, deletedAt: null },
-      include: { programme: true },
+      include: { programme: true, user: true },
     });
     assertFound(student, "Student");
 
@@ -498,14 +498,17 @@ export async function listStudentFees(
  * Safe to call multiple times — existing fees for the same
  * (student, academicYear, semester, category) are skipped.
  */
-export async function generateFeesFromStructure(opts: {
-  studentId: string;
-  programmeId: string;
-  academicYearId: string;
-  semester: Semester;
-}): Promise<ApiResult<{ created: number; skipped: number }>> {
+export async function generateFeesFromStructure(
+  opts: {
+    studentId: string;
+    programmeId: string;
+    academicYearId: string;
+    semester: Semester;
+  },
+  tx: Prisma.TransactionClient | typeof prisma = prisma
+): Promise<ApiResult<{ created: number; skipped: number }>> {
   try {
-    const structures = await prisma.feeStructure.findMany({
+    const structures = await tx.feeStructure.findMany({
       where: {
         programmeId: opts.programmeId,
         academicYearId: opts.academicYearId,
@@ -519,7 +522,7 @@ export async function generateFeesFromStructure(opts: {
     }
 
     // Check which categories already have a fee for this student/year/semester
-    const existing = await prisma.fee.findMany({
+    const existing = await tx.fee.findMany({
       where: {
         studentId: opts.studentId,
         academicYearId: opts.academicYearId,
@@ -534,7 +537,7 @@ export async function generateFeesFromStructure(opts: {
     );
 
     if (toCreate.length > 0) {
-      await prisma.fee.createMany({
+      await tx.fee.createMany({
         data: toCreate.map((s) => ({
           studentId: opts.studentId,
           feeStructureId: s.id,

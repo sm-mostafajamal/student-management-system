@@ -373,4 +373,131 @@ export async function getStudentPublishedResult(
     classification: classifyScore(numericScore),
     publishedAt: grade.publishedAt,
   };
+  
+}
+
+// ─────────────────────────────────────────────
+// Compute the final course grade FROM assessment scores (weighted).
+// This is a pure function — no DB access — so it can be reused both on
+// the server (to save a grade) and to preview the breakdown in the UI.
+// ─────────────────────────────────────────────
+
+export interface AssessmentContribution {
+  assessmentId: string;
+  title: string;
+  score: number | null;
+  maxScore: number;
+  weightPercentage: number;
+  contribution: number | null; // (score / maxScore) * weightPercentage
+}
+
+export interface ComputedFinalGrade {
+  computedScore: number | null;
+  isComplete: boolean; // every assessment has been graded
+  gradedCount: number;
+  totalCount: number;
+  totalWeightDefined: number;
+  totalWeightGraded: number;
+  breakdown: AssessmentContribution[];
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+export function computeFinalGradeFromAssessments(
+  assessments: {
+    assessmentId: string;
+    title: string;
+    score: number | null;
+    maxScore: number;
+    weightPercentage: number;
+  }[]
+): ComputedFinalGrade {
+  const breakdown: AssessmentContribution[] = assessments.map((a) => ({
+    ...a,
+    contribution:
+      a.score != null && a.maxScore > 0
+        ? round2((a.score / a.maxScore) * a.weightPercentage)
+        : null,
+  }));
+
+  const gradedCount = breakdown.filter((a) => a.contribution !== null).length;
+  const totalWeightDefined = round2(assessments.reduce((sum, a) => sum + a.weightPercentage, 0));
+  const totalWeightGraded = round2(
+    breakdown.filter((a) => a.contribution !== null).reduce((sum, a) => sum + a.weightPercentage, 0)
+  );
+  const weightedSum = round2(breakdown.reduce((sum, a) => sum + (a.contribution ?? 0), 0));
+
+  return {
+    computedScore: gradedCount > 0 ? weightedSum : null,
+    isComplete: assessments.length > 0 && gradedCount === assessments.length,
+    gradedCount,
+    totalCount: assessments.length,
+    totalWeightDefined,
+    totalWeightGraded,
+    breakdown,
+  };
+}
+
+// ─────────────────────────────────────────────
+// STAFF: compute the final grade from assessments and save it as the
+// student's Grade. Recomputes server-side — never trusts a client-sent
+// number — then delegates to recordGrade() so all the existing publish/
+// version/audit-log rules still apply.
+// ─────────────────────────────────────────────
+
+export async function computeAndRecordGrade(
+  input: {
+    studentId: string;
+    courseOfferingId: string;
+    reason?: string;
+    expectedVersion?: number;
+  },
+  actingUser: SessionUser
+) {
+  requireStaff(actingUser);
+
+  const assessments = await prisma.assessment.findMany({
+    where: { courseOfferingId: input.courseOfferingId, deletedAt: null },
+  });
+
+  const submissions = await prisma.submission.findMany({
+    where: {
+      studentId: input.studentId,
+      isCurrent: true,
+      assessmentId: { in: assessments.map((a) => a.id) },
+    },
+  });
+  const byAssessment = new Map(submissions.map((s) => [s.assessmentId, s]));
+
+  const rows = assessments.map((a) => {
+    const submission = byAssessment.get(a.id);
+    return {
+      assessmentId: a.id,
+      title: a.title,
+      score: submission?.score != null ? toNumber(submission.score) : null,
+      maxScore: toNumber(a.maxScore),
+      weightPercentage: toNumber(a.weightPercentage),
+    };
+  });
+
+  const computed = computeFinalGradeFromAssessments(rows);
+  if (computed.computedScore === null) {
+    throw new DomainError(
+      "VALIDATION_ERROR",
+      "No assessments have been graded yet for this student — nothing to compute."
+    );
+  }
+
+  return recordGrade(
+    {
+      studentId: input.studentId,
+      courseOfferingId: input.courseOfferingId,
+      numericScore: computed.computedScore,
+      reason: input.reason,
+      expectedVersion: input.expectedVersion,
+    },
+    actingUser
+  );
 }

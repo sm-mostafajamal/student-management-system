@@ -117,7 +117,7 @@ export async function getStudentTranscript(studentId: string) {
       status: student.status,
       programmeName: student.programme.name,
       programmeCode: student.programme.code,
-      admissionYearName: student.admissionAcademicYear ?? "—",
+      admissionYearName: student.admissionAcademicYear?.name ?? "—",
     },
     terms,
     overallAverage,

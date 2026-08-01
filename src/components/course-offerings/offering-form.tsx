@@ -14,9 +14,14 @@ const SEMESTER_LABELS: Record<string, string> = {
 };
 
 // Matches what the parent page actually fetches: the offering's scalars,
-// plus the related course (for isActive) and a computed enrollment count.
+// plus a derived `isActive` (CourseOffering has no isActive column — only
+// deletedAt; see withIsActive() in course.service.ts, which attaches this
+// at read time), the related course (for its own isActive), and a computed
+// enrollment count.
 export type OfferingWithRelations = CourseOffering & {
+  isActive: boolean;
   course: Pick<Course, "isActive">;
+  academicYear: Pick<AcademicYear, "name">;
   enrolled: number;
 };
 
@@ -113,7 +118,12 @@ export function OfferingForm({
             <span className="ml-1 text-red-500">*</span>
           </label>
           {isEdit ? (
-            <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
+            <>
+              <input type="hidden" name="academicYearId" value={offering!.academicYearId} />
+              <p className="mt-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                {offering!.academicYear.name} (locked)
+              </p>
+            </>
           ) : (
             <select
               id="academicYearId"

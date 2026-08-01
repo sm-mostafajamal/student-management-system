@@ -2,12 +2,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
-import { getMarksheetForCourseOffering } from "@/services/result.service";
 import { listSubmissionMarksheetForCourseOffering } from "@/services/submission.service";
 import { ClassificationBadge } from "@/components/results/ClassificationBadge";
 import { RecordGradeForm } from "@/components/results/RecordGradeForm";
 import { PublishToggle } from "@/components/results/PublishToggle";
 import { Role } from "@/types";
+import { getMarksheetForCourseOffering, computeFinalGradeFromAssessments } from "@/services/result.service";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +45,7 @@ export default async function CourseOfferingMarksheetPage({
       <div className="mt-8 space-y-6">
         {entries.map((entry) => {
           const submissionRow = submissionsByStudent.get(entry.studentId);
+          const computed = computeFinalGradeFromAssessments(submissionRow?.assessments ?? []);
           return (
             <section
               key={entry.studentId}
@@ -134,11 +135,16 @@ export default async function CourseOfferingMarksheetPage({
                   Final course grade
                 </h3>
                 <RecordGradeForm
-                  studentId={entry.studentId}
-                  courseOfferingId={courseOfferingId}
-                  currentScore={entry.numericScore}
-                  isPublished={entry.isPublished}
-                  version={entry.version}
+                    studentId={entry.studentId}
+                    courseOfferingId={courseOfferingId}
+                    currentScore={entry.numericScore}
+                    isPublished={entry.isPublished}
+                    version={entry.version}
+                    computedScore={computed.computedScore}
+                    isComplete={computed.isComplete}
+                    gradedCount={computed.gradedCount}
+                    totalCount={computed.totalCount}
+                    breakdown={computed.breakdown}
                 />
               </div>
             </section>

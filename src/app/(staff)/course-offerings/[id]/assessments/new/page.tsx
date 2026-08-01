@@ -3,16 +3,21 @@ import { listOfferings } from "@/services/course.service";
 import { requireStaff } from "@/lib/auth-helpers";
 
 interface PageProps {
+  params: Promise<{ id: string }>;
   searchParams: Promise<{ courseOfferingId?: string }>;
 }
 
-export default async function NewAssessmentPage({ searchParams }: PageProps) {
+export default async function NewAssessmentPage({ params, searchParams }: PageProps) {
   await requireStaff();
-  const { courseOfferingId } = await searchParams;
 
-  // This route (/assessments/new) has no dynamic segment, so it cannot read an
-  // `id` from params — it must fetch the list of course offerings itself and
-  // let staff pick one from a dropdown.
+  // This route IS nested under /course-offerings/[id], so the offering is
+  // already known from the URL path — use it as the default. Still accept
+  // ?courseOfferingId= as an override, in case this component is ever
+  // linked to from somewhere else with an explicit query param.
+  const { id: courseOfferingIdFromPath } = await params;
+  const { courseOfferingId: courseOfferingIdFromQuery } = await searchParams;
+  const defaultCourseOfferingId = courseOfferingIdFromQuery ?? courseOfferingIdFromPath;
+
   const { items: offerings } = await listOfferings({ pageSize: 200 });
 
   return (
@@ -26,7 +31,7 @@ export default async function NewAssessmentPage({ searchParams }: PageProps) {
       <div className="mt-6">
         <CreateAssessmentForm
           courseOfferings={offerings}
-          defaultCourseOfferingId={courseOfferingId}
+          defaultCourseOfferingId={defaultCourseOfferingId}
         />
       </div>
     </main>

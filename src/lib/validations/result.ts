@@ -31,3 +31,12 @@ export const unpublishResultSchema = z.object({
 });
 
 export type UnpublishResultInput = z.infer<typeof unpublishResultSchema>;
+
+export const computeGradeSchema = z.object({
+  studentId: z.string(),
+  courseOfferingId: z.string(),
+  reason: z.string().min(1).optional(),
+  expectedVersion: z.coerce.number().int().positive().optional(),
+});
+
+export type ComputeGradeInput = z.infer<typeof computeGradeSchema>;

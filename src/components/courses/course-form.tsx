@@ -3,13 +3,19 @@
 import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import type { Course, Programme } from "@prisma/client";
 import { createCourseAction, updateCourseAction } from "@/actions/course.actions";
 import type { ActionResult } from "@/actions/programme.actions";
 import { FormError, FieldError } from "@/components/ui/form-error";
 
+// `course` comes from getCourseById(), which returns the SERIALIZED shape
+// (courseFee converted from Prisma.Decimal to a plain number) — not the raw
+// Prisma `Course` type, which still has courseFee typed as Decimal and
+// can't cross the Server Component → Client Component boundary.
 interface CourseFormProps {
-  course?: Course;
+  course?: Omit<
+    import("@prisma/client").Course,
+    "courseFee"
+  > & { courseFee: number };
   programmes: { id: string; code: string; name: string; creditHourRate: number }[];
   defaultProgrammeId?: string;
 }

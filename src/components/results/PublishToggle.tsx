@@ -28,8 +28,10 @@ export function PublishToggle({ gradeId, isPublished, version }: PublishTogglePr
           name="reason"
           type="text"
           required
-          placeholder="Reason to withhold"
-          className="w-40 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          minLength={5}
+          title="At least 5 characters"
+          placeholder="Reason to withhold (min 5 chars)"
+          className="w-48 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
         />
         <button
           type="submit"
@@ -39,7 +41,9 @@ export function PublishToggle({ gradeId, isPublished, version }: PublishTogglePr
           {isUnpublishing ? "Withholding…" : "Withhold"}
         </button>
         {unpublishState && !unpublishState.success && (
-          <span className="text-xs text-red-600">{unpublishState.error}</span>
+          <span className="text-xs text-red-600">
+            {unpublishState.fieldErrors?.reason?.[0] ?? unpublishState.error}
+          </span>
         )}
       </form>
     );
