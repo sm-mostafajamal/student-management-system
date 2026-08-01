@@ -10,7 +10,7 @@ import {
   type UpdateStudentInput,
 } from "@/lib/validations/student.schema";
 import * as studentService from "@/services/student.service";
-import type { ApiResult, StudentWithProgramme } from "@/types";
+import type { ApiResult, StudentWithProgramme, Serialized } from "@/types";
 
 async function assertStaff() {
   const user = await getSessionUser();
@@ -30,7 +30,7 @@ function toApiResult<T>(err: unknown): ApiResult<T> {
 
 export async function createStudentAction(
   input: CreateStudentInput
-): Promise<ApiResult<StudentWithProgramme>> {
+): Promise<ApiResult<Serialized<StudentWithProgramme>>> {
   try {
     await assertStaff();
     const parsed = createStudentSchema.safeParse(input);
@@ -49,7 +49,7 @@ export async function createStudentAction(
 export async function updateStudentAction(
   id: string,
   input: UpdateStudentInput
-): Promise<ApiResult<StudentWithProgramme>> {
+): Promise<ApiResult<Serialized<StudentWithProgramme>>> {
   try {
     await assertStaff();
     const parsed = updateStudentSchema.safeParse(input);

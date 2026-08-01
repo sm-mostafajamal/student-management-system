@@ -6,8 +6,9 @@ import { Prisma, Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import type { CreateStudentInput, UpdateStudentInput, StudentQueryInput } from "@/lib/validations/student.schema";
-import type { StudentWithProgramme, PaginatedResult } from "@/types";
+import type { StudentWithProgramme, PaginatedResult, Serialized } from "@/types";
 import { assignProgrammeBaseFee } from "@/services/fee.service";
+import { toNumber } from "@/lib/decimal";
 
 
 async function assertEmailAvailable(
@@ -88,11 +89,24 @@ async function generateStudentNumber(tx: Prisma.TransactionClient, admissionYear
 
 const studentInclude = { user: true, programme: true } satisfies Prisma.StudentInclude;
 
+// Programme.baseFee is a Prisma Decimal and is not plain-object-serializable,
+// so it can't cross the Server Component → Client Component boundary (or a
+// Server Action's return value) as-is. Every read/write path below returns
+// through this so callers always get a plain number.
+function serializeStudent<T extends StudentWithProgramme>(student: T): Serialized<T> {
+  return {
+    ...student,
+    programme: { ...student.programme, baseFee: toNumber(student.programme.baseFee) },
+  } as Serialized<T>;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Queries
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function listStudents(query: StudentQueryInput): Promise<PaginatedResult<StudentWithProgramme>> {
+export async function listStudents(
+  query: StudentQueryInput
+): Promise<PaginatedResult<Serialized<StudentWithProgramme>>> {
   const where: Prisma.StudentWhereInput = {
     deletedAt: null,
     ...(query.programmeId && { programmeId: query.programmeId }),
@@ -120,7 +134,7 @@ export async function listStudents(query: StudentQueryInput): Promise<PaginatedR
   ]);
 
   return {
-    items,
+    items: items.map(serializeStudent),
     total,
     page: query.page,
     pageSize: query.pageSize,
@@ -128,19 +142,19 @@ export async function listStudents(query: StudentQueryInput): Promise<PaginatedR
   };
 }
 
-export async function getStudentById(id: string): Promise<StudentWithProgramme> {
+export async function getStudentById(id: string): Promise<Serialized<StudentWithProgramme>> {
   const student = await prisma.student.findUnique({ where: { id }, include: studentInclude });
   if (!student || student.deletedAt) {
     throw new AppError("NOT_FOUND", "Student not found.");
   }
-  return student;
+  return serializeStudent(student);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // Mutations
 // ─────────────────────────────────────────────────────────────────────────
 
-export async function createStudent(input: CreateStudentInput): Promise<StudentWithProgramme> {
+export async function createStudent(input: CreateStudentInput): Promise<Serialized<StudentWithProgramme>> {
   const email = input.email.toLowerCase().trim();
 
   // Edge case: "Programme no longer active" — fail fast before opening a
@@ -195,7 +209,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
       // this student). No-ops cleanly if baseFee is 0.
       await assignProgrammeBaseFee(student.id, tx);
 
-      return student;
+      return serializeStudent(student);
     });
   } catch (err) {
     if (err instanceof AppError) throw err;
@@ -212,7 +226,7 @@ export async function createStudent(input: CreateStudentInput): Promise<StudentW
   }
 }
 
-export async function updateStudent(id: string, input: UpdateStudentInput): Promise<StudentWithProgramme> {
+export async function updateStudent(id: string, input: UpdateStudentInput): Promise<Serialized<StudentWithProgramme>> {
   const existing = await prisma.student.findUnique({ where: { id }, include: { user: true } });
   if (!existing || existing.deletedAt) {
     throw new AppError("NOT_FOUND", "Student not found.");
@@ -271,7 +285,7 @@ export async function updateStudent(id: string, input: UpdateStudentInput): Prom
         });
       }
 
-      return tx.student.update({
+      const updated = await tx.student.update({
         where: { id },
         data: {
           ...(input.programmeId && { programmeId: input.programmeId }),
@@ -286,6 +300,8 @@ export async function updateStudent(id: string, input: UpdateStudentInput): Prom
         },
         include: studentInclude,
       });
+
+      return serializeStudent(updated);
 
       // KNOWN LIMITATION (documented, not hidden): a programme change made
       // with force=true + changeReason is validated but, unlike grade

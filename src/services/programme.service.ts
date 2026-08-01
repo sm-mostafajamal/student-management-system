@@ -22,6 +22,7 @@
 import { prisma } from "@/lib/prisma";
 import type { CreateProgrammeInput, UpdateProgrammeInput } from "@/lib/validations/programme-course";
 import { Prisma } from "@prisma/client";
+import { toNumber } from "@/lib/decimal";
 
 // ─── Typed error surface ──────────────────────────────────────────────────────
 
@@ -34,6 +35,23 @@ export class ServiceError extends Error {
     super(message);
     this.name = "ServiceError";
   }
+}
+
+// Programme.baseFee (and, when courses are included, Course.courseFee) are
+// Prisma Decimal values and are not plain-object-serializable, so they can't
+// cross the Server Component → Client Component boundary (or a Server
+// Action's return value) as-is. Every read/write path below converts them
+// to plain numbers before returning.
+function serializeProgramme<T extends { baseFee: Prisma.Decimal; courses?: Array<{ courseFee: Prisma.Decimal }> }>(
+  programme: T
+) {
+  return {
+    ...programme,
+    baseFee: toNumber(programme.baseFee)!,
+    ...(programme.courses && {
+      courses: programme.courses.map((c) => ({ ...c, courseFee: toNumber(c.courseFee)! })),
+    }),
+  };
 }
 
 // ─── Read (used by this module's pages — use reference-data.service.ts for
@@ -54,7 +72,8 @@ export async function getProgrammeById(id: string) {
       },
     },
   });
-  return programme;
+  if (!programme) return programme;
+  return serializeProgramme(programme);
 }
 
 export async function listProgrammes(opts?: {
@@ -93,14 +112,21 @@ export async function listProgrammes(opts?: {
     prisma.programme.count({ where }),
   ]);
 
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  return {
+    items: items.map(serializeProgramme),
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  };
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
 
 export async function createProgramme(input: CreateProgrammeInput) {
   try {
-    return await prisma.programme.create({ data: input });
+    const programme = await prisma.programme.create({ data: input });
+    return serializeProgramme(programme);
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -135,10 +161,11 @@ export async function updateProgramme(input: UpdateProgrammeInput) {
 
   // Check code uniqueness (excluding self) in case the code is being changed
   try {
-    return await prisma.programme.update({
+    const programme = await prisma.programme.update({
       where: { id },
       data: { ...data, isActive },
     });
+    return serializeProgramme(programme);
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&

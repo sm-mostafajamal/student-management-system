@@ -8,9 +8,9 @@ import type { ActionResult } from "@/actions/programme.actions";
 import { FormError, FieldError } from "@/components/ui/form-error";
 
 const SEMESTER_LABELS: Record<string, string> = {
-  FALL: "Fall",
-  SPRING: "Spring",
-  SUMMER: "Summer",
+  FIRST_SEMESTER: "Fall",
+  SECOND_SEMESTER: "Spring",
+  SUMMER_SEMESTER: "Summer",
 };
 
 // Matches what the parent page actually fetches: the offering's scalars,
@@ -48,7 +48,7 @@ export function OfferingForm({
 
   const [state, formAction, isPending] = useActionState(action, initialState);
   const router = useRouter();
-  const [isActive, setIsActive] = useState(offering?.course?.isActive ?? false);
+  const [isActive, setIsActive] = useState(offering?.isActive ?? false);
 
   useEffect(() => {
     if (state?.success) {
@@ -69,7 +69,6 @@ export function OfferingForm({
         <FormError message={state.error} />
       )}
 
-      {/* Course — locked on edit because it's part of the unique key */}
       <div>
         <label
           htmlFor="courseId"
@@ -105,7 +104,6 @@ export function OfferingForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Academic Year — locked on edit */}
         <div>
           <label
             htmlFor="academicYearId"
@@ -133,7 +131,6 @@ export function OfferingForm({
           )}
         </div>
 
-        {/* Semester — locked on edit */}
         <div>
           <label
             htmlFor="semester"
@@ -164,6 +161,7 @@ export function OfferingForm({
               ))}
             </select>
           )}
+          <FieldError message={fieldError("semester")} />
         </div>
       </div>
 
@@ -242,7 +240,7 @@ export function OfferingForm({
             className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label htmlFor="isActive" className="text-sm text-zinc-700 dark:text-zinc-300">
-            Offering is active (students can enroll)
+            {isActive ? "Offering is active (students can enroll)" : "Offering is inactive (students can't enroll)"}
           </label>
         </div>
       )}

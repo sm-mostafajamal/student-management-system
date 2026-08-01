@@ -11,6 +11,7 @@ interface PageProps {
     page?: string;
     courseId?: string;
     academicYearId?: string;
+    showInactive?: string;
   }>;
 }
 
@@ -24,7 +25,7 @@ const SEMESTER_LABELS: Record<string, string> = {
 
 export default async function CourseOfferingsPage({ searchParams }: PageProps) {
   await requireStaff();
-  const { page: pageParam, courseId, academicYearId } = await searchParams;
+  const { page: pageParam, courseId, academicYearId, showInactive } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
   const [{ items, total, totalPages, pageSize }, academicYears] = await Promise.all([
@@ -32,6 +33,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
       page,
       courseId: courseId || undefined,
       academicYearId: academicYearId || undefined,
+      includeInactive: showInactive === "true",
     }),
     listAcademicYears(),
   ]);
@@ -40,6 +42,7 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
     const params = new URLSearchParams();
     params.set("page", String(p));
     if (academicYearId) params.set("academicYearId", academicYearId);
+    if (showInactive) params.set("showInactive", showInactive);
     return `/course-offerings?${params}`;
   };
 
@@ -77,6 +80,16 @@ export default async function CourseOfferingsPage({ searchParams }: PageProps) {
             </option>
           ))}
         </select>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <input
+            name="showInactive"
+            type="checkbox"
+            defaultChecked={showInactive === "true"}
+            value="true"
+            className="rounded border-zinc-300 text-indigo-600"
+          />
+          Show inactive
+        </label>
         <button
           type="submit"
           className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"

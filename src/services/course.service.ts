@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import type { CreateCourseInput, UpdateCourseInput, CreateOfferingInput, UpdateOfferingInput } from "@/lib/validations/programme-course";
 import { Prisma } from "@prisma/client";
 import { ServiceError } from "./programme.service";
+import { toNumber } from "@/lib/decimal";
 
 // CourseOffering has no `isActive` column in the schema — only `deletedAt`.
 // The UI (offering-form.tsx, courses/[id]/page.tsx) reads/writes `isActive`
@@ -30,6 +31,16 @@ function withIsActive<T extends { deletedAt: Date | null }>(
   offering: T
 ): T & { isActive: boolean } {
   return { ...offering, isActive: offering.deletedAt === null };
+}
+
+// Course.courseFee is a Prisma Decimal and is not plain-object-serializable,
+// so it can't cross the Server Component → Client Component boundary (or a
+// Server Action's return value) as-is. Every read path below converts it to
+// a plain number before returning.
+function serializeCourse<T extends { courseFee: Prisma.Decimal }>(
+  course: T
+): Omit<T, "courseFee"> & { courseFee: number } {
+  return { ...course, courseFee: toNumber(course.courseFee)! };
 }
 
 // ─── Courses ──────────────────────────────────────────────────────────────────
@@ -50,7 +61,7 @@ export async function getCourseById(id: string) {
     },
   });
   if (!course) return course;
-  return { ...course, offerings: course.offerings.map(withIsActive) };
+  return serializeCourse({ ...course, offerings: course.offerings.map(withIsActive) });
 }
 
 export async function listCourses(opts?: {
@@ -76,7 +87,7 @@ export async function listCourses(opts?: {
   const [items, total] = await prisma.$transaction([
     prisma.course.findMany({
       where,
-      orderBy: [{ programme: { code: "asc" } }, { code: "asc" }],
+      orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
@@ -87,7 +98,13 @@ export async function listCourses(opts?: {
     prisma.course.count({ where }),
   ]);
 
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  return {
+    items: items.map(serializeCourse),
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  };
 }
 
 export async function createCourse(input: CreateCourseInput) {
@@ -168,7 +185,7 @@ export async function getOfferingById(id: string) {
     },
   });
   if (!offering) return offering;
-  return withIsActive(offering);
+  return withIsActive({ ...offering, course: serializeCourse(offering.course) });
 }
 
 export async function listOfferings(opts?: {
@@ -198,7 +215,7 @@ export async function listOfferings(opts?: {
   const [items, total] = await prisma.$transaction([
     prisma.courseOffering.findMany({
       where,
-      orderBy: [{ academicYear: { startDate: "desc" } }, { semester: "asc" }],
+      orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
