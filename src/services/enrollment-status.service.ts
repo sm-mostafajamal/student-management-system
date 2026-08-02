@@ -118,7 +118,6 @@ export async function changeStudentStatus(
         });
         affectedCourseCount = count;
 
-        // Clear the now-stale deferral metadata.
         studentData.deferredAt = null;
         studentData.expectedReturnDate = null;
         studentData.deferralReason = null;
