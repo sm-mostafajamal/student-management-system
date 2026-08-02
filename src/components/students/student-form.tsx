@@ -39,6 +39,17 @@ type Props =
   | { mode: "create"; programmes: ProgrammeOption[]; academicYears: AcademicYearOption[]; student?: never }
   | { mode: "edit"; programmes: ProgrammeOption[]; academicYears?: never; student: StudentWithProgramme };
 
+
+function toDateInputValue(value: Date | string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return undefined;
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function StudentForm(props: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -53,17 +64,20 @@ export function StudentForm(props: Props) {
   const form = useForm<CreateStudentInput & UpdateStudentInput>({
     resolver: zodResolver(schema as any),
     defaultValues: isEdit
-      ? {
-          firstName: props.student.user.firstName,
-          lastName: props.student.user.lastName,
-          email: props.student.user.email,
-          dateOfBirth: props.student.dateOfBirth ?? undefined,
-          gender: props.student.gender ?? undefined,
-          phone: props.student.phone ?? "",
-          address: props.student.address ?? "",
-          programmeId: props.student.programmeId,
+    ? {
+        firstName: props.student.user.firstName,
+        lastName: props.student.user.lastName,
+        email: props.student.user.email,
+        // Native date inputs require "YYYY-MM-DD" — RHF writes this straight
+        // to the DOM element's .value on mount, so it must already be a
+        // correctly-formatted string, not a Date object.
+        dateOfBirth: toDateInputValue(props.student.dateOfBirth) as any,
+        gender: props.student.gender ?? undefined,
+        phone: props.student.phone ?? "",
+        address: props.student.address ?? "",
+        programmeId: props.student.programmeId,
         }
-      : { gender: undefined },
+    : { gender: undefined },
   });
 
   function onSubmit(values: CreateStudentInput & UpdateStudentInput) {
@@ -130,8 +144,6 @@ export function StudentForm(props: Props) {
     });
   }
 
-  const dobValue = form.watch("dateOfBirth");
-
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
       {serverError && (
@@ -172,7 +184,6 @@ export function StudentForm(props: Props) {
           <Input
             id="dateOfBirth"
             type="date"
-            defaultValue={dobValue ? new Date(dobValue).toISOString().slice(0, 10) : undefined}
             {...form.register("dateOfBirth")}
           />
           {form.formState.errors.dateOfBirth && (

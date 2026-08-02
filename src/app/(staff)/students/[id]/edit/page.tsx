@@ -37,35 +37,35 @@ export default async function EditStudentPage({ params }: PageProps) {
       </div>
 
       {/* Student Summary Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle className="text-base">
-              {student.user.firstName} {student.user.lastName}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {student.programme.code} — {student.programme.name}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {activeCourseCount} active course{activeCourseCount === 1 ? "" : "s"}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <StudentStatusBadge status={student.status} />
-            <ChangeStatusModal studentId={student.id} currentStatus={student.status} />
-          </div>
-        </CardHeader>
-      </Card>
+    <Card className="py-5">
+    <CardHeader className="flex flex-row items-start justify-between gap-4 px-5">
+        <div className="space-y-1">
+        <CardTitle className="text-base">
+            {student.user.firstName} {student.user.lastName}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+            {student.programme.code} — {student.programme.name}
+        </p>
+        <p className="text-xs text-muted-foreground">
+            {activeCourseCount} active course{activeCourseCount === 1 ? "" : "s"}
+        </p>
+        </div>
+        <div className="flex flex-col items-end gap-2 pr-1">
+        <StudentStatusBadge status={student.status} />
+        <ChangeStatusModal studentId={student.id} currentStatus={student.status} />
+        </div>
+    </CardHeader>
+    </Card>
 
       <StudentForm mode="edit" student={student} programmes={programmes} />
 
       {/* Status History Timeline / Audit History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Status History</CardTitle>
+      <Card className="py-5">
+        <CardHeader className="px-5">
+            <CardTitle className="text-base">Status History</CardTitle>
         </CardHeader>
-        <CardContent>
-          <StatusHistoryTimeline entries={history} />
+        <CardContent className="px-5">
+            <StatusHistoryTimeline entries={history} />
         </CardContent>
       </Card>
     </div>

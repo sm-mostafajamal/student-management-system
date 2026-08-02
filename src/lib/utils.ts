@@ -38,6 +38,7 @@ export function formatDate(date: Date | string | null, opts?: Intl.DateTimeForma
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
     ...opts,
   }).format(new Date(date));
 }

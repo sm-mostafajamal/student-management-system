@@ -5,7 +5,7 @@ CREATE TYPE "Role" AS ENUM ('STAFF', 'STUDENT');
 CREATE TYPE "ProgrammeLevel" AS ENUM ('CERTIFICATE', 'DIPLOMA', 'UNDERGRADUATE', 'POSTGRADUATE', 'DOCTORATE');
 
 -- CreateEnum
-CREATE TYPE "StudentStatus" AS ENUM ('ENROLLED', 'DEFERRED', 'SUSPENDED', 'WITHDRAWN', 'COMPLETED', 'EXPELLED');
+CREATE TYPE "StudentStatus" AS ENUM ('ENROLLED', 'DEFERRED', 'WITHDRAWN', 'COMPLETED');
 
 -- CreateEnum
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED');
@@ -14,16 +14,16 @@ CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED');
 CREATE TYPE "Semester" AS ENUM ('FIRST_SEMESTER', 'SECOND_SEMESTER', 'SUMMER_SEMESTER');
 
 -- CreateEnum
-CREATE TYPE "EnrollmentStatus" AS ENUM ('ENROLLED', 'DROPPED', 'COMPLETED', 'FAILED');
+CREATE TYPE "EnrollmentStatus" AS ENUM ('ENROLLED', 'DROPPED', 'COMPLETED', 'FAILED', 'SUSPENDED', 'WITHDRAWN');
 
 -- CreateEnum
-CREATE TYPE "FeeCategory" AS ENUM ('TUITION', 'LIBRARY', 'EXAMINATION', 'HOSTEL', 'MEDICAL', 'REGISTRATION', 'FINE', 'OTHER');
+CREATE TYPE "FeeCategory" AS ENUM ('TUITION', 'LIBRARY', 'EXAMINATION', 'HOSTEL', 'MEDICAL', 'REGISTRATION', 'FINE', 'OTHER', 'PROGRAMME_FEE', 'COURSE_FEE');
 
 -- CreateEnum
 CREATE TYPE "FeeStatus" AS ENUM ('PENDING', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'WAIVED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'BANK_TRANSFER', 'CARD', 'MOBILE_MONEY', 'CHEQUE');
+CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'BANK_TRANSFER', 'CARD', 'MOBILE_MONEY', 'CHEQUE', 'ONLINE');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'REVERSED');
@@ -73,6 +73,8 @@ CREATE TABLE "Programme" (
     "level" "ProgrammeLevel" NOT NULL,
     "durationYears" INTEGER NOT NULL,
     "departmentName" TEXT,
+    "baseFee" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "creditHourRate" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -88,6 +90,7 @@ CREATE TABLE "Course" (
     "title" TEXT NOT NULL,
     "creditHours" INTEGER NOT NULL,
     "programmeId" TEXT,
+    "courseFee" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -124,6 +127,13 @@ CREATE TABLE "Student" (
     "phone" TEXT,
     "address" TEXT,
     "expectedGraduationDate" TIMESTAMP(3),
+    "deferredAt" TIMESTAMP(3),
+    "deferralReason" TEXT,
+    "expectedReturnDate" TIMESTAMP(3),
+    "withdrawnAt" TIMESTAMP(3),
+    "withdrawalReason" TEXT,
+    "completedAt" TIMESTAMP(3),
+    "award" TEXT,
     "deletedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -165,6 +175,7 @@ CREATE TABLE "Fee" (
     "id" TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
     "feeStructureId" TEXT,
+    "enrollmentId" TEXT,
     "academicYearId" TEXT NOT NULL,
     "semester" "Semester" NOT NULL,
     "category" "FeeCategory" NOT NULL,
@@ -281,6 +292,20 @@ CREATE TABLE "GradeChangeLog" (
     CONSTRAINT "GradeChangeLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "StudentStatusHistory" (
+    "id" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "oldStatus" "StudentStatus",
+    "newStatus" "StudentStatus" NOT NULL,
+    "reason" TEXT NOT NULL,
+    "notes" TEXT,
+    "changedById" TEXT NOT NULL,
+    "changedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StudentStatusHistory_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -354,6 +379,9 @@ CREATE UNIQUE INDEX "Enrollment_studentId_courseOfferingId_key" ON "Enrollment"(
 CREATE UNIQUE INDEX "FeeStructure_programmeId_academicYearId_semester_category_key" ON "FeeStructure"("programmeId", "academicYearId", "semester", "category");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Fee_enrollmentId_key" ON "Fee"("enrollmentId");
+
+-- CreateIndex
 CREATE INDEX "Fee_studentId_academicYearId_idx" ON "Fee"("studentId", "academicYearId");
 
 -- CreateIndex
@@ -401,6 +429,9 @@ CREATE UNIQUE INDEX "Grade_studentId_courseOfferingId_key" ON "Grade"("studentId
 -- CreateIndex
 CREATE INDEX "GradeChangeLog_gradeId_changedAt_idx" ON "GradeChangeLog"("gradeId", "changedAt");
 
+-- CreateIndex
+CREATE INDEX "StudentStatusHistory_studentId_changedAt_idx" ON "StudentStatusHistory"("studentId", "changedAt");
+
 -- AddForeignKey
 ALTER TABLE "Course" ADD CONSTRAINT "Course_programmeId_fkey" FOREIGN KEY ("programmeId") REFERENCES "Programme"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -420,6 +451,9 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_userId_fkey" FOREIGN KEY ("userId"
 ALTER TABLE "Student" ADD CONSTRAINT "Student_programmeId_fkey" FOREIGN KEY ("programmeId") REFERENCES "Programme"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Student" ADD CONSTRAINT "Student_admissionAcademicYearId_fkey" FOREIGN KEY ("admissionAcademicYearId") REFERENCES "AcademicYear"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Enrollment" ADD CONSTRAINT "Enrollment_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -436,6 +470,9 @@ ALTER TABLE "Fee" ADD CONSTRAINT "Fee_studentId_fkey" FOREIGN KEY ("studentId") 
 
 -- AddForeignKey
 ALTER TABLE "Fee" ADD CONSTRAINT "Fee_feeStructureId_fkey" FOREIGN KEY ("feeStructureId") REFERENCES "FeeStructure"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Fee" ADD CONSTRAINT "Fee_enrollmentId_fkey" FOREIGN KEY ("enrollmentId") REFERENCES "Enrollment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Fee" ADD CONSTRAINT "Fee_academicYearId_fkey" FOREIGN KEY ("academicYearId") REFERENCES "AcademicYear"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -478,3 +515,9 @@ ALTER TABLE "GradeChangeLog" ADD CONSTRAINT "GradeChangeLog_gradeId_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "GradeChangeLog" ADD CONSTRAINT "GradeChangeLog_changedById_fkey" FOREIGN KEY ("changedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentStatusHistory" ADD CONSTRAINT "StudentStatusHistory_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentStatusHistory" ADD CONSTRAINT "StudentStatusHistory_changedById_fkey" FOREIGN KEY ("changedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
