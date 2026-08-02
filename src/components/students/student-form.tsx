@@ -19,7 +19,7 @@ import {
   type UpdateStudentInput,
 } from "@/lib/validations/student.schema";
 import { createStudentAction, updateStudentAction } from "@/actions/student.actions";
-import { Gender, StudentStatus } from "@/types";
+import { Gender } from "@/types";
 import type { AutoEnrollSummary } from "@/services/student.service";
 import type { StudentWithProgramme, Serialized } from "@/types";
 
@@ -62,7 +62,6 @@ export function StudentForm(props: Props) {
           phone: props.student.phone ?? "",
           address: props.student.address ?? "",
           programmeId: props.student.programmeId,
-          status: props.student.status,
         }
       : { gender: undefined },
   });
@@ -266,31 +265,6 @@ export function StudentForm(props: Props) {
                 <SelectItem key={y.id} value={y.id}>
                   {y.name}
                   {y.isCurrent ? " (current)" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {isEdit && (
-        <div className="flex flex-col gap-1.5">
-          <Label>Status</Label>
-          <Select
-            items={Object.values(StudentStatus).map((s) => ({
-              value: s,
-              label: s.charAt(0) + s.slice(1).toLowerCase(),
-            }))}
-            defaultValue={props.student.status}
-            onValueChange={(v) => form.setValue("status", v as StudentStatus)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(StudentStatus).map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s.charAt(0) + s.slice(1).toLowerCase()}
                 </SelectItem>
               ))}
             </SelectContent>

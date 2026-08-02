@@ -194,12 +194,11 @@ async function main() {
     },
   });
 
-  // SUSPENDED — bounced cheque on an overdue fee is the business reason.
   const user3 = await prisma.user.create({ data: { email: "fatima.ibrahim@pen.edu.ng", firstName: "Fatima", lastName: "Ibrahim", role: Role.STUDENT } });
   const student3 = await prisma.student.create({
     data: {
       userId: user3.id, studentNumber: "SMS-2024-0015", programmeId: progBA.id,
-      admissionAcademicYearId: ay2024.id, status: StudentStatus.SUSPENDED,
+      admissionAcademicYearId: ay2024.id, status: StudentStatus.ENROLLED,
       dateOfBirth: new Date("2001-08-20"), gender: Gender.FEMALE, phone: "+2348031234503",
     },
   });

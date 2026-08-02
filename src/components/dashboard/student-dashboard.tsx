@@ -24,6 +24,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { toNumberRequired } from "@/lib/decimal";
 import { GPA_SCALE } from "@/types";
 import type { LetterGrade } from "@prisma/client";
+import { StudentStatusBadge } from "@/components/students/status-badge";
+import { StudentStatus } from "@prisma/client";
 
 interface StudentDashboardProps {
   session: SessionUser;
@@ -138,7 +140,19 @@ export async function StudentDashboard({ session }: StudentDashboardProps) {
       />
 
       <div className="flex-1 px-6 py-6 space-y-6">
-
+        {student.status !== StudentStatus.ENROLLED && (
+        <div className="mx-6 mt-4 rounded-lg border border-border bg-muted/40 px-4 py-3 flex items-center gap-3">
+            <StudentStatusBadge status={student.status} />
+            <p className="text-sm text-muted-foreground">
+            {student.status === StudentStatus.DEFERRED &&
+                "Your enrollment is currently deferred. You can't register for new courses or attend classes until you return to Enrolled."}
+            {student.status === StudentStatus.WITHDRAWN &&
+                "Your enrollment has been withdrawn. This account is now inactive for new registrations."}
+            {student.status === StudentStatus.COMPLETED &&
+                "Congratulations — your program has been marked Completed."}
+            </p>
+        </div>
+        )}
         {/* KPI row */}
         <StatCardGrid>
           <StatCard

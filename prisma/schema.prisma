@@ -25,12 +25,10 @@ enum ProgrammeLevel {
 }
 
 enum StudentStatus {
-  ENROLLED    
+  ENROLLED
   DEFERRED
-  SUSPENDED
   WITHDRAWN
-  COMPLETED   
-  EXPELLED
+  COMPLETED
 }
 
 enum Gender {
@@ -51,6 +49,8 @@ enum EnrollmentStatus {
   DROPPED
   COMPLETED
   FAILED
+  SUSPENDED
+  WITHDRAWN
 }
 
 enum FeeCategory {
@@ -149,6 +149,7 @@ model User {
   gradedSubmissions   Submission[]      @relation("GradedBy")
   computedGrades      Grade[]           @relation("ComputedBy")
   gradeChanges        GradeChangeLog[]  @relation("ChangedBy")
+  statusChangesLogged StudentStatusHistory[] @relation("StatusChangedBy")  
 
   @@index([role])
   @@index([lastName, firstName])
@@ -278,15 +279,25 @@ model CourseOffering {
 model Student {
   id                     String        @id @default(cuid())
   userId                 String        @unique
-  studentNumber          String        @unique 
+  studentNumber          String        @unique
   programmeId            String
-  admissionAcademicYearId String?      // intake cohort, nullable for legacy/manual entries
+  admissionAcademicYearId String?
   status                 StudentStatus @default(ENROLLED)
   dateOfBirth            DateTime?
   gender                 Gender?
   phone                  String?
   address                String?
   expectedGraduationDate DateTime?
+
+  // ── Enrollment-status workflow metadata (NEW) ──────────────────────────
+  deferredAt             DateTime?
+  deferralReason         String?
+  expectedReturnDate     DateTime?
+  withdrawnAt            DateTime?
+  withdrawalReason       String?
+  completedAt            DateTime?
+  award                  String?
+
   deletedAt              DateTime?
   createdAt              DateTime      @default(now())
   updatedAt              DateTime      @updatedAt
@@ -295,11 +306,12 @@ model Student {
   programme             Programme     @relation(fields: [programmeId], references: [id], onDelete: Restrict)
   admissionAcademicYear AcademicYear? @relation(fields: [admissionAcademicYearId], references: [id], onDelete: SetNull)
 
-  enrollments Enrollment[]
-  fees        Fee[]
-  payments    Payment[]
-  submissions Submission[]
-  grades      Grade[]
+  enrollments   Enrollment[]
+  fees          Fee[]
+  payments      Payment[]
+  submissions   Submission[]
+  grades        Grade[]
+  statusHistory StudentStatusHistory[]   // NEW
 
   @@index([programmeId])
   @@index([status])
@@ -555,4 +567,24 @@ model GradeChangeLog {
   changedBy User  @relation("ChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
 
   @@index([gradeId, changedAt])
+}
+
+/// Immutable audit trail for Student.status transitions. One row per
+/// change (see enrollment-status.service.ts — the sole writer of this
+/// table). Never updated or deleted, even if the status is later reversed
+/// (e.g. Deferred → Enrolled creates a NEW row, it doesn't edit the old one).
+model StudentStatusHistory {
+  id          String         @id @default(cuid())
+  studentId   String
+  oldStatus   StudentStatus?  // null only for a (currently unused) initial-admission row
+  newStatus   StudentStatus
+  reason      String
+  notes       String?
+  changedById String
+  changedAt   DateTime       @default(now())
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  changedBy User    @relation("StatusChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([studentId, changedAt])
 }

@@ -381,7 +381,6 @@ export async function updateStudent(id: string, input: UpdateStudentInput): Prom
         where: { id },
         data: {
           ...(input.programmeId && { programmeId: input.programmeId }),
-          ...(input.status && { status: input.status }),
           ...(input.dateOfBirth !== undefined && { dateOfBirth: input.dateOfBirth }),
           ...(input.gender !== undefined && { gender: input.gender }),
           ...(input.phone !== undefined && { phone: input.phone || null }),

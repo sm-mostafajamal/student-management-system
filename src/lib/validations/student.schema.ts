@@ -61,8 +61,7 @@ export const createStudentSchema = z
       path: ["dateOfBirth"],
     }
   );
-
-export const updateStudentSchema = z
+   export const updateStudentSchema = z
   .object({
     firstName: nameSchema.optional(),
     lastName: nameSchema.optional(),
@@ -71,11 +70,11 @@ export const updateStudentSchema = z
     gender: z.nativeEnum(Gender).optional(),
     phone: phoneSchema,
     address: z.string().trim().max(500).optional().or(z.literal("")),
-    status: z.nativeEnum(StudentStatus).optional(),
+    // status intentionally removed — status changes now go exclusively
+    // through changeStudentStatusAction (see enrollment-status.service.ts),
+    // which enforces the transition state machine and course effects.
     programmeId: cuidSchema.optional(),
     expectedGraduationDate: z.coerce.date().optional(),
-    // Two-step confirmation for the "programme change after payments exist"
-    // edge case — see student.service.ts.
     force: z.boolean().optional(),
     changeReason: z.string().trim().max(500).optional(),
   })
