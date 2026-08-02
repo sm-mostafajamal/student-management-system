@@ -260,7 +260,6 @@ interface GradeSubmissionParams {
   score: number;
   feedback?: string;
 }
-
 export async function gradeSubmission(
   params: GradeSubmissionParams,
   actingUser: SessionUser
@@ -281,7 +280,8 @@ export async function gradeSubmission(
   if (params.score < 0 || params.score > maxScore) {
     throw new DomainError("VALIDATION_ERROR", `Score must be between 0 and ${maxScore}.`);
   }
-  return prisma.submission.update({
+
+  const updated = await prisma.submission.update({
     where: { id: params.submissionId },
     data: {
       score: params.score,
@@ -290,6 +290,10 @@ export async function gradeSubmission(
       gradedAt: new Date(),
     },
   });
+
+  // Caller (the grade action) needs this to redirect back to the
+  // course offering's marksheet after a successful save.
+  return { ...updated, courseOfferingId: submission.assessment.courseOfferingId };
 }
 
 /** Fetches one submission with everything the grading page needs to render:

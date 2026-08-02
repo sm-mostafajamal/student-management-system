@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { submitAssessmentSchema } from "@/lib/validations/assessment-submission";
 import { submitAssessment, gradeSubmission } from "@/services/submission.service";
@@ -93,14 +94,17 @@ export async function gradeSubmissionAction(
     };
   }
 
+  let courseOfferingId: string;
+
   try {
     const submission = await gradeSubmission(
       {
         submissionId,
         score,
-        feedback: typeof rawFeedback === "string" && rawFeedback.trim() !== ""
-          ? rawFeedback.trim()
-          : undefined,
+        feedback:
+          typeof rawFeedback === "string" && rawFeedback.trim() !== ""
+            ? rawFeedback.trim()
+            : undefined,
       },
       user
     );
@@ -108,7 +112,9 @@ export async function gradeSubmissionAction(
     revalidatePath(`/assessments/${assessmentId}/submissions`);
     revalidatePath(`/assessments/${assessmentId}/submissions/${submissionId}/grade`);
     revalidatePath(`/assessments/${assessmentId}/submissions/${submissionId}/history`);
-    return { success: true, data: { id: submission.id } };
+
+    courseOfferingId = submission.courseOfferingId;
+    revalidatePath(`/course-offerings/${courseOfferingId}/marksheet`);
   } catch (err) {
     if (err instanceof DomainError) {
       return { success: false, error: err.message };
@@ -116,4 +122,8 @@ export async function gradeSubmissionAction(
     console.error("gradeSubmissionAction failed", err);
     return { success: false, error: "Something went wrong grading this submission." };
   }
+
+  // Must be outside the try/catch — redirect() throws internally and
+  // would otherwise be caught and reported as a generic failure.
+  redirect(`/course-offerings/${courseOfferingId}/marksheet`);
 }
