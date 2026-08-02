@@ -23,6 +23,7 @@ import { StudentStatus } from "@/types";
 import { changeStudentStatusAction } from "@/actions/enrollment-status.actions";
 import { getAllowedNextStatuses } from "@/lib/enrollment-status-rules";
 import { StudentStatusBadge } from "./status-badge";
+import { cn } from "@/lib/utils";
 
 interface FormValues {
   targetStatus: StudentStatus | "";
@@ -52,26 +53,29 @@ export function ChangeStatusModal({
 
   const allowedNext = getAllowedNextStatuses(currentStatus);
 
-  const { register, watch, setValue, handleSubmit, reset, formState } = useForm<FormValues>({
-    defaultValues: {
-      targetStatus: "",
-      reason: "",
-      notes: "",
-      effectiveDate: todayIso(),
-      deferredDate: todayIso(),
-      expectedReturnDate: "",
-      withdrawalDate: todayIso(),
-      completionDate: todayIso(),
-      award: "",
-    },
-  });
+  const { register, watch, setValue, handleSubmit, reset, setError, clearErrors, formState } =
+    useForm<FormValues>({
+      defaultValues: {
+        targetStatus: "",
+        reason: "",
+        notes: "",
+        effectiveDate: todayIso(),
+        deferredDate: todayIso(),
+        expectedReturnDate: "",
+        withdrawalDate: todayIso(),
+        completionDate: todayIso(),
+        award: "",
+      },
+    });
 
   const targetStatus = watch("targetStatus");
+  const errors = formState.errors;
 
   function closeAndReset() {
     setOpen(false);
     setConfirming(false);
     setServerError(null);
+    clearErrors();
     reset();
   }
 
@@ -112,6 +116,20 @@ export function ChangeStatusModal({
     }
   }
 
+  // Maps server-side Zod fieldErrors (snake/camel keys from
+  // `flatten().fieldErrors`) onto react-hook-form fields so the
+  // matching inputs actually get highlighted + an inline message.
+  function applyServerFieldErrors(fieldErrors?: Record<string, string[]>) {
+    if (!fieldErrors) return;
+    for (const [field, messages] of Object.entries(fieldErrors)) {
+      if (!messages?.length) continue;
+      setError(field as keyof FormValues, {
+        type: "server",
+        message: messages[0],
+      });
+    }
+  }
+
   function onSubmit(values: FormValues) {
     if (!confirming) {
       setConfirming(true);
@@ -122,6 +140,8 @@ export function ChangeStatusModal({
     if (!payload) return;
 
     setServerError(null);
+    clearErrors();
+
     startTransition(async () => {
       const result = await changeStudentStatusAction(studentId, payload);
       if (result.success) {
@@ -129,10 +149,15 @@ export function ChangeStatusModal({
         closeAndReset();
         return;
       }
+
       setServerError(result.error);
+      applyServerFieldErrors(result.fieldErrors);
       setConfirming(false);
     });
   }
+
+  const inputClass = (hasError: boolean) =>
+    cn(hasError && "border-destructive focus-visible:ring-destructive");
 
   return (
     <Dialog
@@ -178,12 +203,14 @@ export function ChangeStatusModal({
               <div className="flex flex-col gap-1.5">
                 <Label>New status</Label>
                 <Select
-                items={allowedNext.map((s) => ({ value: s, label: s }))}
-                value={targetStatus}
-                onValueChange={(v) => {
+                  items={allowedNext.map((s) => ({ value: s, label: s }))}
+                  value={targetStatus}
+                  onValueChange={(v) => {
                     setValue("targetStatus", v as StudentStatus);
                     setConfirming(false);
-                }}
+                    clearErrors();
+                    setServerError(null);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select the next status" />
@@ -202,9 +229,20 @@ export function ChangeStatusModal({
                 <>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="reason">Reason (required)</Label>
-                    <Textarea id="reason" rows={2} {...register("reason", { required: true })} />
-                    {formState.errors.reason && (
-                      <p className="text-xs text-destructive">Reason is required.</p>
+                    <Textarea
+                      id="reason"
+                      rows={2}
+                      className={inputClass(!!errors.reason)}
+                      {...register("reason", {
+                        required: "Reason is required.",
+                        minLength: {
+                          value: 5,
+                          message: "Reason must be at least 5 characters.",
+                        },
+                      })}
+                    />
+                    {errors.reason && (
+                      <p className="text-xs text-destructive">{errors.reason.message}</p>
                     )}
                   </div>
 
@@ -212,15 +250,27 @@ export function ChangeStatusModal({
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="deferredDate">Deferred date</Label>
-                        <Input id="deferredDate" type="date" {...register("deferredDate")} />
+                        <Input
+                          id="deferredDate"
+                          type="date"
+                          className={inputClass(!!errors.deferredDate)}
+                          {...register("deferredDate")}
+                        />
+                        {errors.deferredDate && (
+                          <p className="text-xs text-destructive">{errors.deferredDate.message}</p>
+                        )}
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="expectedReturnDate">Expected return (required)</Label>
                         <Input
                           id="expectedReturnDate"
                           type="date"
-                          {...register("expectedReturnDate", { required: true })}
+                          className={inputClass(!!errors.expectedReturnDate)}
+                          {...register("expectedReturnDate", { required: "Expected return date is required." })}
                         />
+                        {errors.expectedReturnDate && (
+                          <p className="text-xs text-destructive">{errors.expectedReturnDate.message}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -228,7 +278,15 @@ export function ChangeStatusModal({
                   {targetStatus === StudentStatus.WITHDRAWN && (
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="withdrawalDate">Withdrawal date</Label>
-                      <Input id="withdrawalDate" type="date" {...register("withdrawalDate")} />
+                      <Input
+                        id="withdrawalDate"
+                        type="date"
+                        className={inputClass(!!errors.withdrawalDate)}
+                        {...register("withdrawalDate")}
+                      />
+                      {errors.withdrawalDate && (
+                        <p className="text-xs text-destructive">{errors.withdrawalDate.message}</p>
+                      )}
                     </div>
                   )}
 
@@ -236,11 +294,30 @@ export function ChangeStatusModal({
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="completionDate">Completion date</Label>
-                        <Input id="completionDate" type="date" {...register("completionDate")} />
+                        <Input
+                          id="completionDate"
+                          type="date"
+                          className={inputClass(!!errors.completionDate)}
+                          {...register("completionDate")}
+                        />
+                        {errors.completionDate && (
+                          <p className="text-xs text-destructive">{errors.completionDate.message}</p>
+                        )}
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label htmlFor="award">Award (required)</Label>
-                        <Input id="award" placeholder="e.g. BSc in Computer Science" {...register("award", { required: true })} />
+                        <Input
+                          id="award"
+                          placeholder="e.g. BSc in Computer Science"
+                          className={inputClass(!!errors.award)}
+                          {...register("award", {
+                            required: "Award / qualification title is required.",
+                            minLength: { value: 2, message: "Award / qualification title is required." },
+                          })}
+                        />
+                        {errors.award && (
+                          <p className="text-xs text-destructive">{errors.award.message}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -248,13 +325,29 @@ export function ChangeStatusModal({
                   {targetStatus === StudentStatus.ENROLLED && (
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="effectiveDate">Effective date</Label>
-                      <Input id="effectiveDate" type="date" {...register("effectiveDate")} />
+                      <Input
+                        id="effectiveDate"
+                        type="date"
+                        className={inputClass(!!errors.effectiveDate)}
+                        {...register("effectiveDate")}
+                      />
+                      {errors.effectiveDate && (
+                        <p className="text-xs text-destructive">{errors.effectiveDate.message}</p>
+                      )}
                     </div>
                   )}
 
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="notes">Notes (optional)</Label>
-                    <Textarea id="notes" rows={2} {...register("notes")} />
+                    <Textarea
+                      id="notes"
+                      rows={2}
+                      className={inputClass(!!errors.notes)}
+                      {...register("notes")}
+                    />
+                    {errors.notes && (
+                      <p className="text-xs text-destructive">{errors.notes.message}</p>
+                    )}
                   </div>
                 </>
               )}
