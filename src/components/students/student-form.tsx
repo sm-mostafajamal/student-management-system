@@ -59,10 +59,11 @@ export function StudentForm(props: Props) {
   const [needsProgrammeChangeConfirm, setNeedsProgrammeChangeConfirm] = useState(false);
 
   const isEdit = props.mode === "edit";
-  const schema = isEdit ? updateStudentSchema : createStudentSchema;
 
   const form = useForm<CreateStudentInput & UpdateStudentInput>({
-    resolver: zodResolver(schema) as unknown as Resolver<CreateStudentInput & UpdateStudentInput>,
+    resolver: (isEdit
+      ? zodResolver(updateStudentSchema)
+      : zodResolver(createStudentSchema)) as unknown as Resolver<CreateStudentInput & UpdateStudentInput>,
     defaultValues: isEdit
     ? {
         firstName: props.student.user.firstName,
