@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { getSessionUser } from "@/lib/session";
-import { firstZodMessage } from "@/lib/errors";
 import { reversePaymentSchema } from "@/lib/validations/fee.schema";
 import { reversePayment } from "@/services/payment.service";
 import { Role } from "@/types";

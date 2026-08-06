@@ -14,7 +14,7 @@
 import { Prisma, PaymentMethod, PaymentStatus } from "@prisma/client";
 
 import prisma from "@/lib/prisma";
-import { fromNumber, toNumberRequired } from "@/lib/decimal";
+import { fromNumber } from "@/lib/decimal";
 import { syncFeeStatus } from "@/services/fee.service";
 import type { RecordPaymentInput } from "@/lib/validations/fee.schema";
 

@@ -5,7 +5,15 @@ import { recordPaymentAction } from "@/actions/payment.actions";
 
 const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "CARD", "ONLINE", "MOBILE_MONEY", "CHEQUE"] as const;
 
-export function RecordPaymentForm({ feeId, balance }: { feeId: string; balance: number }) {
+export function RecordPaymentForm({
+  feeId,
+  studentId,
+  balance,
+}: {
+  feeId: string;
+  studentId: string;
+  balance: number;
+}) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -26,6 +34,7 @@ export function RecordPaymentForm({ feeId, balance }: { feeId: string; balance: 
         startTransition(async () => {
           const result = await recordPaymentAction({
             feeId,
+            studentId,
             amount: formData.get("amount"),
             method: formData.get("method"),
             reference: formData.get("reference"),

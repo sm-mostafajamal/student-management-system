@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { updateProgrammeAction } from "@/actions/programme.actions";
 import { toggleProgrammeStatusAction } from "@/actions/programme.actions";
 
 interface Props {

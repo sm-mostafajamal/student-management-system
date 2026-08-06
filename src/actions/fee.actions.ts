@@ -6,7 +6,6 @@ import { AppError, firstZodMessage } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import {
   createFeeStructure,
-  listFeeStructures,
   updateFeeStructureAmount,
   deactivateFeeStructure,
   reactivateFeeStructure,

@@ -7,7 +7,6 @@ import {
   BookMarked, BarChart2, FileText, Award, CreditCard, Banknote, Receipt,
   LucideProps,CalendarDays,     
 } from "lucide-react";
-import { Role } from "@prisma/client";
 import { getNavSectionsForRole } from "@/lib/nav-config";
 import { useSession } from "@/components/shared/session-provider";
 import { cn } from "@/lib/utils";
@@ -40,7 +39,7 @@ const ICON_MAP: Record<IconName, React.ComponentType<LucideProps>> = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, isStaff, switchRole, isSwitching, signOut } = useSession();
+  const { user, signOut } = useSession();
 
   if (!user) return null;
 

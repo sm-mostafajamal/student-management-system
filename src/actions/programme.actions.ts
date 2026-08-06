@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { CreateProgrammeSchema, UpdateProgrammeSchema } from "@/lib/validations/programme-course";
 import {
   createProgramme,

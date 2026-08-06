@@ -4,6 +4,7 @@ import { getStudentFeeBreakdown } from "@/services/fee.service";
 import { RecordPaymentForm } from "@/components/fees/record-payment-form";
 import { ReversePaymentButton } from "@/components/fees/reverse-payment-button";
 import { formatDate } from "@/lib/utils";
+import type { StudentWithProgramme } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -171,6 +172,7 @@ export default async function StudentFeesPage({
           <FeeCard
             label={`Programme Fee — ${programme.name}`}
             feeLine={programmeFeeLine}
+            student={student}
           />
         )}
 
@@ -184,6 +186,7 @@ export default async function StudentFeesPage({
                 : "Course Fee"
             }
             feeLine={line}
+            student={student}
           />
         ))}
 
@@ -193,6 +196,7 @@ export default async function StudentFeesPage({
             key={line.fee.id}
             label={`${line.fee.category.replace(/_/g, " ")} — ${line.fee.semester.replace(/_/g, " ")}`}
             feeLine={line}
+            student={student}
           />
         ))}
 
@@ -233,9 +237,11 @@ interface FeeLine {
 function FeeCard({
   label,
   feeLine,
+  student,
 }: {
   label: string;
   feeLine: FeeLine;
+  student: StudentWithProgramme;
 }) {
   const { fee, amountDue, waivedAmount, totalPaid, balance, isOverdue } = feeLine;
 
@@ -306,7 +312,7 @@ function FeeCard({
 
       {/* Record payment form (hidden when fully settled) */}
       <div className="border-t border-border pt-3">
-        <RecordPaymentForm feeId={fee.id} balance={balance} />
+        <RecordPaymentForm feeId={fee.id} studentId={student.id} balance={balance} />
       </div>
 
       {/* Payment history */}

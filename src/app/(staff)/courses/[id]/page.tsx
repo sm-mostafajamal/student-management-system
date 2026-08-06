@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Users } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { getCourseById } from "@/services/course.service";
 import { listProgrammesForFilter } from "@/services/reference-data.service";
 import { CourseForm } from "@/components/courses/course-form";

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { CourseOffering, Course, AcademicYear, User } from "@prisma/client";
 import { createOfferingAction, updateOfferingAction } from "@/actions/course.actions";
 import type { ActionResult } from "@/actions/programme.actions";
@@ -58,7 +59,8 @@ export function OfferingForm({
   useEffect(() => {
     if (state?.success) {
       const id = state.data?.id ?? offering?.id;
-      router.push(id ? `/course-offerings/${id}` : "/course-offerings");
+      toast.success("Offering saved successfully!");
+      router.push(id ? `/enrollments/${id}` : "/enrollments");
       router.refresh();
     }
   }, [state, offering?.id, router]);

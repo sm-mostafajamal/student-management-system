@@ -250,7 +250,7 @@ async function main() {
   // student1 (Chidinma) — CS201 + CS205 + GEN100
   const enr1_CS201 = await prisma.enrollment.create({ data: { studentId: student1.id, courseOfferingId: offCS201.id, status: EnrollmentStatus.ENROLLED } });
   const enr1_CS205 = await prisma.enrollment.create({ data: { studentId: student1.id, courseOfferingId: offCS205.id, status: EnrollmentStatus.ENROLLED } });
-  const enr1_GEN100 = await prisma.enrollment.create({ data: { studentId: student1.id, courseOfferingId: offGEN100.id, status: EnrollmentStatus.ENROLLED } });
+  await prisma.enrollment.create({ data: { studentId: student1.id, courseOfferingId: offGEN100.id, status: EnrollmentStatus.ENROLLED } });
 
   // student2 (Samuel) — CS201 + CS205
   const enr2_CS201 = await prisma.enrollment.create({ data: { studentId: student2.id, courseOfferingId: offCS201.id, status: EnrollmentStatus.ENROLLED } });
@@ -268,7 +268,7 @@ async function main() {
   // student5 (Amara) — no enrolments (demonstrates scenario 5: programme fee only)
 
   // student6 (Blessing/COMPLETED) — finished BA150 in prior year
-  const enr6_BA150 = await prisma.enrollment.create({
+  await prisma.enrollment.create({
     data: {
       studentId: student6.id, courseOfferingId: offBA150_2024.id,
       status: EnrollmentStatus.COMPLETED, enrolledAt: new Date("2024-09-10"),
@@ -276,8 +276,8 @@ async function main() {
   });
 
   // student7 (Emeka) — CS201 + GEN100 (for assessment coverage)
-  const enr7_CS201 = await prisma.enrollment.create({ data: { studentId: student7.id, courseOfferingId: offCS201.id, status: EnrollmentStatus.ENROLLED } });
-  const enr7_GEN100 = await prisma.enrollment.create({ data: { studentId: student7.id, courseOfferingId: offGEN100.id, status: EnrollmentStatus.ENROLLED } });
+  await prisma.enrollment.create({ data: { studentId: student7.id, courseOfferingId: offCS201.id, status: EnrollmentStatus.ENROLLED } });
+  await prisma.enrollment.create({ data: { studentId: student7.id, courseOfferingId: offGEN100.id, status: EnrollmentStatus.ENROLLED } });
 
   console.log("✅ Enrollments created");
 
@@ -287,7 +287,6 @@ async function main() {
   // snapshotting doesn't drift.
   const fsCS_tuition_2025 = await prisma.feeStructure.create({ data: { programmeId: progCS.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.TUITION, amount: 450000 } });
   await prisma.feeStructure.create({ data: { programmeId: progCS.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.LIBRARY, amount: 15000 } });
-  const fsBA_tuition_2025 = await prisma.feeStructure.create({ data: { programmeId: progBA.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.TUITION, amount: 380000 } });
   await prisma.feeStructure.create({ data: { programmeId: progCS.id, academicYearId: ay2024.id, semester: Semester.SECOND_SEMESTER, category: FeeCategory.TUITION, amount: 420000 } });
   const fsBA_tuition_2024 = await prisma.feeStructure.create({ data: { programmeId: progBA.id, academicYearId: ay2024.id, semester: Semester.SECOND_SEMESTER, category: FeeCategory.TUITION, amount: 350000 } });
 
@@ -317,16 +316,15 @@ async function main() {
   //   A REVERSED payment proves the bounced-cheque audit trail.
   //   Due date set far enough back to guarantee > 30 days overdue on any run.
   const fee3_prog = await prisma.fee.create({ data: { studentId: student3.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.PROGRAMME_FEE, amountDue: 45000, status: FeeStatus.OVERDUE, dueDate: new Date("2025-06-30") } });
-  const fee3_ba101 = await prisma.fee.create({ data: { studentId: student3.id, enrollmentId: enr3_BA101.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.COURSE_FEE, amountDue: 12000, status: FeeStatus.OVERDUE, dueDate: new Date("2025-06-30") } });
+  await prisma.fee.create({ data: { studentId: student3.id, enrollmentId: enr3_BA101.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.COURSE_FEE, amountDue: 12000, status: FeeStatus.OVERDUE, dueDate: new Date("2025-06-30") } });
 
   // SCENARIO 4: John (student4/DEFERRED) — OVERPAID / CREDIT
-  //   Programme fee is 50,000. He paid 60,000 — a 10,000 credit (negative balance).
   const fee4_prog = await prisma.fee.create({ data: { studentId: student4.id, academicYearId: ay2024.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.PROGRAMME_FEE, amountDue: 50000, status: FeeStatus.PAID, dueDate: new Date("2024-10-15") } });
 
   // SCENARIO 5: Amara (student5) — ENROLLED, NO BILLABLE COURSES YET
   //   Only the programme base fee has been billed. No course enrolments means
   //   no COURSE_FEE rows. Outstanding balance = 45,000.
-  const fee5_prog = await prisma.fee.create({ data: { studentId: student5.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.PROGRAMME_FEE, amountDue: 45000, status: FeeStatus.PENDING, dueDate: new Date("2026-10-15") } });
+  await prisma.fee.create({ data: { studentId: student5.id, academicYearId: ay2025.id, semester: Semester.FIRST_SEMESTER, category: FeeCategory.PROGRAMME_FEE, amountDue: 45000, status: FeeStatus.PENDING, dueDate: new Date("2026-10-15") } });
 
   // Blessing (student6/COMPLETED) — historical BA150 tuition fee, fully paid.
   const fee6_tuition = await prisma.fee.create({ data: { studentId: student6.id, feeStructureId: fsBA_tuition_2024.id, academicYearId: ay2024.id, semester: Semester.SECOND_SEMESTER, category: FeeCategory.TUITION, amountDue: 350000, status: FeeStatus.PAID, dueDate: new Date("2025-02-15") } });
@@ -445,7 +443,7 @@ async function main() {
   // ── Grades ───────────────────────────────────────────────────────
   await prisma.grade.create({ data: { studentId: student7.id, courseOfferingId: offCS201.id, isPublished: false } });
 
-  const grade1 = await prisma.grade.create({
+  await prisma.grade.create({
     data: {
       studentId: student1.id, courseOfferingId: offCS201.id,
       numericScore: 82, letterGrade: LetterGrade.A_MINUS, gpaPoints: 3.7,

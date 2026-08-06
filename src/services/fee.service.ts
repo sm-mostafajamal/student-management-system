@@ -291,7 +291,7 @@ export async function getStudentFeeBreakdown(studentId: string) {
       prisma.fee.findMany({
         where: { studentId },
         include: { payments: { orderBy: { paidAt: "desc" } } },
-        orderBy: [{ category: "asc" }, { createdAt: "asc" }],
+        orderBy: [{ category: "asc" }, { createdAt: "desc" }],
       }),
       prisma.enrollment.findMany({
         where: { studentId },
@@ -611,6 +611,96 @@ export async function listOverdueFees() {
       AND f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0) > 0
       AND s."deletedAt" IS NULL
     ORDER BY f."dueDate" ASC
+  `;
+}
+
+/**
+ * Aggregate outstanding balance across ALL fees with a positive balance —
+ * unlike listOverdueFees(), this is NOT restricted to dueDate < NOW(). A
+ * fee that's pending but not yet due still counts as money owed; overdue
+ * is a subset of outstanding, not a synonym for it. Used by the /payments
+ * ledger to show "how much is still owed" alongside the transaction
+ * history, since listPayments() only ever queries the Payment table and
+ * has no visibility into unpaid/partially-paid Fee balances on its own.
+ */
+export async function getOutstandingFeesSummary() {
+  const rows = await prisma.$queryRaw<
+    Array<{ totalOutstanding: Prisma.Decimal | null; feeCount: bigint }>
+  >`
+    SELECT
+      SUM(f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0)) AS "totalOutstanding",
+      COUNT(*) AS "feeCount"
+    FROM "Fee" f
+    JOIN "Student" s ON s.id = f."studentId"
+    LEFT JOIN (
+      SELECT "feeId", SUM(amount) AS total_paid
+      FROM "Payment"
+      WHERE status = 'COMPLETED'
+      GROUP BY "feeId"
+    ) p ON p."feeId" = f.id
+    WHERE f.status NOT IN ('WAIVED', 'CANCELLED')
+      AND f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0) > 0
+      AND s."deletedAt" IS NULL
+  `;
+
+  return {
+    totalOutstanding: toNumber(rows[0]?.totalOutstanding) ?? 0,
+    feeCount: Number(rows[0]?.feeCount ?? 0),
+  };
+}
+
+/**
+ * Row-level companion to getOutstandingFeesSummary() — same balance
+ * formula and WAIVED/CANCELLED exclusion, but returns one row per
+ * outstanding Fee (student, category, balance) instead of just a total.
+ * Deliberately NOT restricted to dueDate < NOW() like listOverdueFees() —
+ * a fee that isn't due yet still counts as "outstanding," it's just not
+ * yet "overdue." Used to render the actual list of who owes what on the
+ * /payments ledger, since listPayments() only ever sees money already
+ * recorded and has no visibility into unpaid Fee balances on its own.
+ */
+export async function listOutstandingFees(limit = 25) {
+  return prisma.$queryRaw<
+    Array<{
+      feeId: string;
+      studentId: string;
+      studentNumber: string;
+      firstName: string;
+      lastName: string;
+      category: string;
+      dueDate: Date | null;
+      amountDue: Prisma.Decimal;
+      waivedAmount: Prisma.Decimal;
+      totalPaid: Prisma.Decimal;
+      balance: Prisma.Decimal;
+    }>
+  >`
+    SELECT
+      f.id AS "feeId",
+      f."studentId",
+      s."studentNumber",
+      u."firstName",
+      u."lastName",
+      f.category,
+      f."dueDate",
+      f."amountDue",
+      f."waivedAmount",
+      COALESCE(p.total_paid, 0) AS "totalPaid",
+      f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0) AS balance
+    FROM "Fee" f
+    JOIN "Student" s ON s.id = f."studentId"
+    JOIN "User" u ON u.id = s."userId"
+    LEFT JOIN (
+      SELECT "feeId", SUM(amount) AS total_paid
+      FROM "Payment"
+      WHERE status = 'COMPLETED'
+      GROUP BY "feeId"
+    ) p ON p."feeId" = f.id
+    WHERE f.status NOT IN ('WAIVED', 'CANCELLED')
+      AND f."amountDue" - f."waivedAmount" - COALESCE(p.total_paid, 0) > 0
+      AND s."deletedAt" IS NULL
+    ORDER BY balance DESC
+    LIMIT ${limit}
   `;
 }
 

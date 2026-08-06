@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getOfferingById } from "@/services/course.service";
-import { listAcademicYears, listProgrammesForFilter } from "@/services/reference-data.service";
+import { listAcademicYears } from "@/services/reference-data.service";
 import { OfferingForm } from "@/components/course-offerings/offering-form";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { requireStaff } from "@/lib/auth-helpers";

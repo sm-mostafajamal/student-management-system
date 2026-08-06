@@ -11,7 +11,7 @@
  */
 
 import {
-  Users, GraduationCap, CreditCard, AlertTriangle,
+  Users, CreditCard, AlertTriangle,
   BookOpen, TrendingUp, Clock,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";

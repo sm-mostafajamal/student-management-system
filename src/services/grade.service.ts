@@ -9,8 +9,8 @@
  */
 
 import prisma from "@/lib/prisma";
-import { ok, fail, assertFound, AppError } from "@/lib/errors";
-import { toNumber, fromNumber } from "@/lib/decimal";
+import { ok, fail, AppError } from "@/lib/errors";
+import { fromNumber } from "@/lib/decimal";
 import { GPA_SCALE } from "@/types";
 import type { ApiResult, GradeWithHistory } from "@/types";
 import { LetterGrade } from "@prisma/client";
@@ -169,8 +169,9 @@ export async function upsertGrade(
  */
 export async function publishGradesForOffering(
   courseOfferingId: string,
-  publishedById: string
+  _publishedById: string
 ): Promise<ApiResult<{ published: number }>> {
+  void _publishedById;
   try {
     const enrolledStudentIds = await prisma.enrollment.findMany({
       where: { courseOfferingId, status: "ENROLLED" },

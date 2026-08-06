@@ -5,7 +5,6 @@ import {
   Role,
   classifyScore,
   type MarksheetEntry,
-  type PublishedResultView,
   type StudentResultView,
   type SessionUser,
 } from "@/types";

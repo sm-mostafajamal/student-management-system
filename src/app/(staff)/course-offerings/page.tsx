@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, CalendarDays } from "lucide-react";
 import { listOfferings } from "@/services/course.service";
-import { listAcademicYears, listProgrammesForFilter } from "@/services/reference-data.service";
+import { listAcademicYears } from "@/services/reference-data.service";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Pagination } from "@/components/ui/pagination";
 import { requireStaff } from "@/lib/auth-helpers";

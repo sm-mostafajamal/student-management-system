@@ -54,6 +54,24 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
     return Math.max(hours, 0) * creditHourRate;
   }, [creditHours, creditHourRate]);
 
+  // Course Fee is editable — the credit-hour calculation is a starting
+  // suggestion, not the only way to price a course. When creditHourRate
+  // is 0 (the normal "use a flat fee" case, per the schema comment on
+  // Programme.creditHourRate), there'd otherwise be no way to set a price
+  // at all. Once staff type their own value, stop overwriting it if
+  // programme/creditHours change afterward.
+  const [courseFeeInput, setCourseFeeInput] = useState<string>(
+    course ? course.courseFee.toFixed(2) : calculatedFee.toFixed(2)
+  );
+  const [feeManuallyEdited, setFeeManuallyEdited] = useState<boolean>(isEdit);
+
+  useEffect(() => {
+    if (!feeManuallyEdited) {
+      setCourseFeeInput(calculatedFee.toFixed(2));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calculatedFee]);
+
   useEffect(() => {
     if (state?.success) {
       const id = state.data?.id ?? course?.id;
@@ -171,40 +189,62 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
         <FieldError message={fieldError("title")} />
       </div>
 
-      {/* Course Fee — auto-calculated from creditHours × the selected programme's creditHourRate */}
+      {/* Course Fee — editable. Pre-filled from creditHours × the selected
+          programme's creditHourRate as a starting suggestion, but staff can
+          type their own flat fee (this is the normal path when the
+          programme has no creditHourRate configured — see schema comment
+          on Programme.creditHourRate). */}
       <div>
         <label
           htmlFor="courseFee"
           className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
         >
           Course Fee
-          <span className="ml-1 text-xs text-zinc-400">(auto-calculated)</span>
         </label>
-        <input
-          id="courseFee"
-          type="text"
-          readOnly
-          disabled
-          value={calculatedFee.toFixed(2)}
-          className="mt-1.5 block w-full cursor-not-allowed rounded-lg border border-zinc-300 bg-zinc-100 px-3 py-2 text-sm text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
-        />
-        {/* Disabled inputs don't submit — this hidden field carries the actual value */}
-        <input type="hidden" name="courseFee" value={calculatedFee} />
+        <div className="mt-1.5 flex gap-2">
+          <input
+            id="courseFee"
+            name="courseFee"
+            type="number"
+            step="0.01"
+            min="0"
+            required
+            value={courseFeeInput}
+            onChange={(e) => {
+              setFeeManuallyEdited(true);
+              setCourseFeeInput(e.target.value);
+            }}
+            className="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          />
+          {creditHourRate > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setFeeManuallyEdited(false);
+                setCourseFeeInput(calculatedFee.toFixed(2));
+              }}
+              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-600 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              Use calculated
+            </button>
+          )}
+        </div>
         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
           {selectedProgramme ? (
             creditHourRate > 0 ? (
               <>
-                {creditHours} credit{creditHours !== 1 ? "s" : ""} × ৳{creditHourRate.toFixed(2)}{" "}
-                per credit hour ({selectedProgramme.code}) = ৳{calculatedFee.toFixed(2)}
+                Suggested: {creditHours} credit{creditHours !== 1 ? "s" : ""} × ৳{creditHourRate.toFixed(2)}{" "}
+                per credit hour ({selectedProgramme.code}) = ৳{calculatedFee.toFixed(2)}. You can
+                override this with a flat fee.
               </>
             ) : (
               <>
-                {selectedProgramme.code} has no credit hour rate configured, so the fee is ৳0.00.
-                Set a Credit Hour Rate on the programme to enable billing.
+                {selectedProgramme.code} has no credit hour rate configured — enter a flat fee, or
+                set a Credit Hour Rate on the programme to auto-calculate one.
               </>
             )
           ) : (
-            "Select a programme above to calculate the fee."
+            "Select a programme above, or enter a flat fee directly."
           )}
         </p>
         <FieldError message={fieldError("courseFee")} />
