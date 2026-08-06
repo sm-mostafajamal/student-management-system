@@ -125,7 +125,7 @@ export default async function StudentAssessmentPage({ params }: PageProps) {
           </dl>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">You haven't submitted anything yet.</p>
+        <p className="text-sm text-muted-foreground">You haven&apos;t submitted anything yet.</p>
       )}
 
       {resubmissionBlocked && (
@@ -136,7 +136,7 @@ export default async function StudentAssessmentPage({ params }: PageProps) {
       )}
       {!resubmissionBlocked && attemptsExhausted && (
         <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          You've used all {assessment.maxAttempts} allowed attempt(s) for this assessment.
+          You&apos;ve used all {assessment.maxAttempts} allowed attempt(s) for this assessment.
         </p>
       )}
 

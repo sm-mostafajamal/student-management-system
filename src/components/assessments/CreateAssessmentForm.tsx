@@ -147,7 +147,7 @@ export function CreateAssessmentForm({
         />
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           Students can replace their submission up to this many times while the deadline
-          (+ grace period) hasn't passed yet. Set to 1 to lock it after the first submission.
+          (+ grace period) hasn&apos;t passed yet. Set to 1 to lock it after the first submission.
         </p>
       </div>
 

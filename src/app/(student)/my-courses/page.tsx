@@ -17,7 +17,7 @@ export default async function MyCoursesPage() {
       <div>
         <h1 className="text-2xl font-semibold">My Courses</h1>
         <p className="text-sm text-muted-foreground">
-          Courses you're currently enrolled in. Open an assessment to view or submit your work.
+          Courses you&apos;re currently enrolled in. Open an assessment to view or submit your work.
         </p>
       </div>
 

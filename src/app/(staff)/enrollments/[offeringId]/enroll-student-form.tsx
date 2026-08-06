@@ -45,7 +45,7 @@ export function EnrollStudentForm({
           <p className="mt-1 text-sm text-destructive">{state.fieldErrors.studentId[0]}</p>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
-          Look the student up in the Student Directory if you don't have their ID handy.
+          Look the student up in the Student Directory if you don&apos;t have their ID handy.
         </p>
       </div>
 

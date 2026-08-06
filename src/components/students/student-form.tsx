@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ export function StudentForm(props: Props) {
   const schema = isEdit ? updateStudentSchema : createStudentSchema;
 
   const form = useForm<CreateStudentInput & UpdateStudentInput>({
-    resolver: zodResolver(schema as any),
+    resolver: zodResolver(schema) as unknown as Resolver<CreateStudentInput & UpdateStudentInput>,
     defaultValues: isEdit
     ? {
         firstName: props.student.user.firstName,
@@ -71,7 +71,7 @@ export function StudentForm(props: Props) {
         // Native date inputs require "YYYY-MM-DD" — RHF writes this straight
         // to the DOM element's .value on mount, so it must already be a
         // correctly-formatted string, not a Date object.
-        dateOfBirth: toDateInputValue(props.student.dateOfBirth) as any,
+        dateOfBirth: toDateInputValue(props.student.dateOfBirth) as unknown as Date,
         gender: props.student.gender ?? undefined,
         phone: props.student.phone ?? "",
         address: props.student.address ?? "",
@@ -235,7 +235,7 @@ export function StudentForm(props: Props) {
             onValueChange={(v) => {
               form.setValue("programmeId", v ?? '');
               setNeedsProgrammeChangeConfirm(false); 
-              form.setValue("force", false as any);
+              form.setValue("force", false);
             }}
           >
             <SelectTrigger>
@@ -294,7 +294,7 @@ export function StudentForm(props: Props) {
           <AlertTitle>Confirm programme change</AlertTitle>
           <AlertDescription className="flex flex-col gap-2">
             <p>
-              This student has existing payment records. Past invoices won't change, but future billing will
+              This student has existing payment records. Past invoices won&apos;t change, but future billing will
               follow the new programme. Provide a reason to proceed.
             </p>
             <Textarea
@@ -309,7 +309,7 @@ export function StudentForm(props: Props) {
               variant="secondary"
               className="w-fit"
               onClick={() => {
-                form.setValue("force", true as any);
+                form.setValue("force", true);
                 form.handleSubmit(onSubmit)();
               }}
             >

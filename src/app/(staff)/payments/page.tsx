@@ -31,7 +31,7 @@ export default async function PaymentsLedgerPage({ searchParams }: PageProps) {
 
   const { items, total } = await listPayments({
     search: params.search,
-    method: params.method as any,
+    method: params.method as PaymentMethod | undefined,
     status: params.status as "COMPLETED" | "FAILED" | "REVERSED" | undefined,
     dateFrom: params.dateFrom ? new Date(params.dateFrom) : undefined,
     dateTo: params.dateTo ? new Date(params.dateTo) : undefined,

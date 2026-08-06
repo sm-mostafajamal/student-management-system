@@ -89,7 +89,7 @@ export default async function GradeSubmissionPage({
         href={`/assessments/${assessmentId}/submissions/${submissionId}/history`}
         className="mt-4 inline-block text-sm font-medium text-gray-600 hover:underline dark:text-gray-400"
       >
-        View this student's previous results for this subject →
+        View this student&apos;s previous results for this subject &rarr;
       </Link>
     </main>
   );

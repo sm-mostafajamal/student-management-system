@@ -92,7 +92,7 @@ export function RecordGradeForm({
 
       {computeState?.success && (
         <p className="text-sm text-emerald-600 dark:text-emerald-400">
-          Final grade saved from assessment scores. Click "Publish" above to release it to the student.
+          Final grade saved from assessment scores. Click &quot;Publish&quot; above to release it to the student.
         </p>
       )}
       {computeState && !computeState.success && (

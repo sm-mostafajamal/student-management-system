@@ -16,7 +16,7 @@ export default async function StudentResultsPage() {
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">My Results</h1>
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Results your registry is still finalizing show as "Withheld" until published.
+        Results your registry is still finalizing show as &quot;Withheld&quot; until published.
       </p>
 
       <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">

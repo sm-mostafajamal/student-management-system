@@ -224,9 +224,9 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
           className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
         />
         <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-          When set above 0, each course's fee for students on this programme is computed as
-          <span className="font-medium"> credit hours × this rate</span>, overriding the course's own flat fee.
-          Leave 0 to keep using each course's flat "Course Fee" as-is.
+          When set above 0, each course&apos;s fee for students on this programme is computed as
+          <span className="font-medium"> credit hours × this rate</span>, overriding the course&apos;s own flat fee.
+          Leave 0 to keep using each course&apos;s flat &quot;Course Fee&quot; as-is.
         </p>
         <FieldError message={fieldError("creditHourRate")} />
       </div>
