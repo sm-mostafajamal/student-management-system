@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 import { publishResultAction, unpublishResultAction } from "@/app/actions/result-actions";
 
 interface PublishToggleProps {
@@ -18,6 +19,24 @@ export function PublishToggle({ gradeId, isPublished, version }: PublishTogglePr
     unpublishResultAction,
     null
   );
+
+  useEffect(() => {
+    if (!publishState) return;
+    if (publishState.success) {
+      toast.success("Result published to student.");
+    } else if (publishState.error) {
+      toast.error(publishState.error);
+    }
+  }, [publishState]);
+
+  useEffect(() => {
+    if (!unpublishState) return;
+    if (unpublishState.success) {
+      toast.success("Result withheld from student.");
+    } else if (unpublishState.error && !unpublishState.fieldErrors?.reason) {
+      toast.error(unpublishState.error);
+    }
+  }, [unpublishState]);
 
   if (isPublished) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -40,6 +40,15 @@ export function EditAssessmentForm({ assessment, hasSubmissions }: EditAssessmen
   const [state, formAction, isPending] = useActionState(updateAssessmentAction, null);
   const inputClass =
     "mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 disabled:cursor-not-allowed disabled:opacity-60";
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.success) {
+      toast.success("Assessment updated.");
+    } else if (state.error && !state.fieldErrors) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   return (
     <div className="space-y-8">

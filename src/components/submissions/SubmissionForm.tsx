@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 import { submitAssessmentAction } from "@/app/actions/submission-actions";
 
 export function SubmissionForm({
@@ -11,6 +12,17 @@ export function SubmissionForm({
   hasExisting: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(submitAssessmentAction, null);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.success) {
+      toast.success(
+        `Submitted (attempt ${state.data.attemptNumber}). ${state.data.isLate ? "Flagged as late." : "On time."}`
+      );
+    } else if (state.error && !state.fieldErrors) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-4">

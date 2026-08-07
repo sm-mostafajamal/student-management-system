@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import { toast } from "sonner";
 import { recordGradeAction, computeAndSaveGradeAction } from "@/app/actions/result-actions";
 import type { AssessmentContribution } from "@/services/result.service";
 import { classifyScore } from "@/types";
@@ -33,6 +34,28 @@ export function RecordGradeForm({
   const [computeState, computeAction, isComputing] = useActionState(computeAndSaveGradeAction, null);
   const [manualState, manualAction, isSavingManual] = useActionState(recordGradeAction, null);
   const [showManualOverride, setShowManualOverride] = useState(false);
+
+  useEffect(() => {
+    if (!computeState) return;
+    if (computeState.success) {
+      toast.success("Final grade saved. Click \"Publish\" to release it to the student.");
+    } else if (computeState.error) {
+      toast.error(computeState.error);
+    }
+  }, [computeState]);
+
+  useEffect(() => {
+    if (!manualState) return;
+    if (manualState.success) {
+      toast.success(
+        isPublished
+          ? "Override saved — result withheld until you republish."
+          : "Override saved."
+      );
+    } else if (manualState.error) {
+      toast.error(manualState.error);
+    }
+  }, [manualState, isPublished]);
 
   return (
     <div className="space-y-4">

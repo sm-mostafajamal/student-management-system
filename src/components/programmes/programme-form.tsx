@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import type { Programme } from "@prisma/client";
 import { ProgrammeLevel } from "@/types";
 import {
@@ -33,15 +34,19 @@ export function ProgrammeForm({ programme, onSuccess }: ProgrammeFormProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (state?.success) {
+    if (!state) return;
+    if (state.success) {
       const id = state.data?.id ?? programme?.id;
+      toast.success(isEdit ? "Programme updated." : "Programme created.");
       if (onSuccess && id) {
         onSuccess(id);
       } else {
         router.push("/programmes");
       }
+    } else if (!state.field) {
+      toast.error(state.error ?? "Something went wrong. Please try again.");
     }
-  }, [state, onSuccess, programme?.id, router]);
+  }, [state, onSuccess, programme?.id, router, isEdit]);
 
   const fieldError = (field: string) =>
     state && !state.success && state.field === field ? state.error : undefined;

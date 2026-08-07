@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { toast } from "sonner";
 import { gradeSubmissionAction } from "@/app/actions/submission-actions";
 
 interface MarkSubmissionFormProps {
@@ -19,6 +20,15 @@ export function MarkSubmissionForm({
   currentFeedback,
 }: MarkSubmissionFormProps) {
   const [state, formAction, isPending] = useActionState(gradeSubmissionAction, null);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.success) {
+      toast.success(currentScore === null ? "Mark saved." : "Mark updated.");
+    } else if (state.error) {
+      toast.error(state.error);
+    }
+  }, [state, currentScore]);
 
   return (
     <form action={formAction} className="space-y-4">

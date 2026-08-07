@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { createFeeStructureAction } from "@/actions/fee.actions";
 
 const SEMESTERS = ["FIRST_SEMESTER", "SECOND_SEMESTER", "SUMMER_SEMESTER"] as const;
@@ -14,13 +15,11 @@ export function FeeStructureForm({
   academicYears: { id: string; name: string }[];
 }) {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   return (
     <form
       className="grid grid-cols-2 gap-3 sm:grid-cols-5"
       action={(formData: FormData) => {
-        setError(null);
         startTransition(async () => {
           const result = await createFeeStructureAction({
             programmeId: formData.get("programmeId"),
@@ -29,7 +28,11 @@ export function FeeStructureForm({
             category: formData.get("category"),
             amount: formData.get("amount"),
           });
-          if (!result.success) setError(result.error);
+          if (!result.success) {
+            toast.error(result.error ?? "Failed to add fee structure.");
+          } else {
+            toast.success("Fee structure added.");
+          }
         });
       }}
     >
@@ -92,7 +95,7 @@ export function FeeStructureForm({
       >
         {isPending ? "Saving..." : "Add fee structure"}
       </button>
-      {error && <p className="col-span-2 text-sm text-red-600 dark:text-red-400 sm:col-span-5">{error}</p>}
     </form>
   );
 }
+

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { recordPaymentAction } from "@/actions/payment.actions";
 
 const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "CARD", "ONLINE", "MOBILE_MONEY", "CHEQUE"] as const;
@@ -15,8 +16,6 @@ export function RecordPaymentForm({
   balance: number;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   return (
     balance <= 0 ?
@@ -29,8 +28,6 @@ export function RecordPaymentForm({
     <form
       className="space-y-3"
       action={(formData: FormData) => {
-        setError(null);
-        setSuccess(false);
         startTransition(async () => {
           const result = await recordPaymentAction({
             feeId,
@@ -40,8 +37,11 @@ export function RecordPaymentForm({
             reference: formData.get("reference"),
             paidAt: formData.get("paidAt"),
           });
-          if (!result.success) setError(result.error);
-          else setSuccess(true);
+          if (!result.success) {
+            toast.error(result.error ?? "Failed to record payment.");
+          } else {
+            toast.success("Payment recorded.");
+          }
         });
       }}
     >
@@ -99,8 +99,6 @@ export function RecordPaymentForm({
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {success && <p className="text-sm text-green-700 dark:text-green-400">Payment recorded.</p>}
 
       <button
         type="submit"

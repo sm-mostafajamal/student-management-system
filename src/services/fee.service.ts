@@ -760,8 +760,4 @@ export async function syncFeeStatus(feeId: string, tx: Prisma.TransactionClient 
     return tx.fee.update({ where: { id: feeId }, data: { status } });
   }
   return fee;
-}
-
-function round2(n: number) {
-  return Math.round(n * 100) / 100;
-}
+}

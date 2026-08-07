@@ -57,13 +57,16 @@ export function OfferingForm({
   const [isActive, setIsActive] = useState(offering?.isActive ?? false);
 
   useEffect(() => {
-    if (state?.success) {
+    if (!state) return;
+    if (state.success) {
       const id = state.data?.id ?? offering?.id;
-      toast.success("Offering saved successfully!");
+      toast.success(isEdit ? "Offering updated successfully!" : "Offering created successfully!");
       router.push(id ? `/enrollments/${id}` : "/enrollments");
       router.refresh();
+    } else if (!state.field) {
+      toast.error(state.error ?? "Something went wrong. Please try again.");
     }
-  }, [state, offering?.id, router]);
+  }, [state, offering?.id, router, isEdit]);
 
   const fieldError = (field: string) =>
     state && !state.success && state.field === field ? state.error : undefined;

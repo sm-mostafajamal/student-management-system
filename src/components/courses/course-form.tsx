@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { createCourseAction, updateCourseAction } from "@/actions/course.actions";
 import type { ActionResult } from "@/actions/programme.actions";
 import { FormError, FieldError } from "@/components/ui/form-error";
@@ -73,11 +74,15 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
   }, [calculatedFee]);
 
   useEffect(() => {
-    if (state?.success) {
+    if (!state) return;
+    if (state.success) {
       const id = state.data?.id ?? course?.id;
+      toast.success(isEdit ? "Course updated." : "Course created.");
       router.push(id ? `/courses/${id}` : "/courses");
+    } else if (!state.field) {
+      toast.error(state.error ?? "Something went wrong. Please try again.");
     }
-  }, [state, course?.id, router]);
+  }, [state, course?.id, router, isEdit]);
 
   const fieldError = (field: string) =>
     state && !state.success && state.field === field ? state.error : undefined;
@@ -161,7 +166,12 @@ export function CourseForm({ course, programmes, defaultProgrammeId }: CourseFor
             min={1}
             max={12}
             value={creditHours}
-            onChange={(e) => setCreditHours(e.target.valueAsNumber || 0)}
+            onChange={(e) => {
+              setCreditHours(e.target.valueAsNumber ?? '');
+              // Typing a new credit hour value should trigger auto-calculation,
+              // clearing any previous manual override on the fee field.
+              setFeeManuallyEdited(false);
+            }}
             className="mt-1.5 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
           />
           <FieldError message={fieldError("creditHours")} />

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { createAssessmentAction } from "@/app/actions/assessment-actions";
 import { AssessmentType } from "@/types";
 import { DueDateGraceField } from "@/components/assessments/DueDateGraceField";
@@ -24,9 +25,13 @@ export function CreateAssessmentForm({
   const [state, formAction, isPending] = useActionState(createAssessmentAction, null);
 
   useEffect(() => {
-    if (state?.success) {
+    if (!state) return;
+    if (state.success) {
+      toast.success("Assessment created.");
       router.push("/assessments");
       router.refresh();
+    } else if (state.error && !state.fieldErrors) {
+      toast.error(state.error);
     }
   }, [state, router]);
 
